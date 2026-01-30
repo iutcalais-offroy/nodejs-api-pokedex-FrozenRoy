@@ -6,7 +6,7 @@ import {CardModel} from "../src/generated/prisma/models/Card";
 import {PokemonType} from "../src/generated/prisma/enums";
 import { Card } from "../src/generated/prisma/client";
 
-function getRandomCards(cards: Card[], count: number) {
+function getRandomCards<T>(cards: T[], count: number): T[] {
     const shuffled = [...cards].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, count);
 }
