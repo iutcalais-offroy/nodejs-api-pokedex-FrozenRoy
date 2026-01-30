@@ -22,7 +22,7 @@ authRouter.post('/sign-up', async (req: Request, res: Response) => {
         })
     
         if (user) {
-            return res.status(401).json({error: 'Email ou mot de passe incorrect'})
+            return res.status(409).json({error: 'Un utilisateur avec cet email existe déjà'})
         }
 
         const hashedPassword = await bcrypt.hash(password, 10)
