@@ -4,8 +4,9 @@ import {join} from "path";
 import {prisma} from "../src/database";
 import {CardModel} from "../src/generated/prisma/models/Card";
 import {PokemonType} from "../src/generated/prisma/enums";
+import { Card } from "../src/generated/prisma/client";
 
-function getRandomCards(cards: any[], count: number) {
+function getRandomCards(cards: Card[], count: number) {
     const shuffled = [...cards].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, count);
 }
@@ -64,7 +65,7 @@ async function main() {
     );
 
     console.log(`✅ Created ${pokemonData.length} Pokemon cards`);
-    
+
     const randomCardsForRed = getRandomCards(createdCards, 10);
     const randomCardsForBlue = getRandomCards(createdCards, 10);
 
