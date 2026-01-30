@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import {readFileSync} from "fs";
 import {join} from "path";
+import 'dotenv/config'
 import {prisma} from "../src/database";
 import {CardModel} from "../src/generated/prisma/models/Card";
 import {PokemonType} from "../src/generated/prisma/enums";
