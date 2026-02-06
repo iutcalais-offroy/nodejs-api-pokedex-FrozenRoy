@@ -1,176 +1,178 @@
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-    font-family: monospace;
-    padding: 20px;
-    background: #1e1e1e;
-    color: #d4d4d4;
+  font-family: monospace;
+  padding: 20px;
+  background: #1e1e1e;
+  color: #d4d4d4;
 }
 
 h1 {
-    margin-bottom: 20px;
-    font-size: 20px;
+  margin-bottom: 20px;
+  font-size: 20px;
 }
 
 .section {
-    background: #252526;
-    border: 1px solid #3e3e42;
-    padding: 15px;
-    margin-bottom: 15px;
-    border-radius: 4px;
+  background: #252526;
+  border: 1px solid #3e3e42;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 4px;
 }
 
 .section h2 {
-    font-size: 14px;
-    margin-bottom: 10px;
-    color: #4ec9b0;
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: #4ec9b0;
 }
 
-input, button, textarea {
-    font-family: monospace;
-    padding: 8px;
-    margin: 5px 0;
-    border: 1px solid #3e3e42;
-    background: #1e1e1e;
-    color: #d4d4d4;
-    border-radius: 3px;
+input,
+button,
+textarea {
+  font-family: monospace;
+  padding: 8px;
+  margin: 5px 0;
+  border: 1px solid #3e3e42;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 3px;
 }
 
 input {
-    width: 300px;
+  width: 300px;
 }
 
 button {
-    cursor: pointer;
-    background: #0e639c;
-    border: none;
-    padding: 8px 16px;
+  cursor: pointer;
+  background: #0e639c;
+  border: none;
+  padding: 8px 16px;
 }
 
 button:hover {
-    background: #1177bb;
+  background: #1177bb;
 }
 
 button:disabled {
-    background: #3e3e42;
-    cursor: not-allowed;
+  background: #3e3e42;
+  cursor: not-allowed;
 }
 
 .status {
-    padding: 8px;
-    border-radius: 3px;
-    margin: 10px 0;
+  padding: 8px;
+  border-radius: 3px;
+  margin: 10px 0;
 }
 
 .status.connected {
-    background: #1e3a1e;
-    border: 1px solid #4ec9b0;
+  background: #1e3a1e;
+  border: 1px solid #4ec9b0;
 }
 
 .status.disconnected {
-    background: #3a1e1e;
-    border: 1px solid #f48771;
+  background: #3a1e1e;
+  border: 1px solid #f48771;
 }
 
 #logs {
-    background: #1e1e1e;
-    border: 1px solid #3e3e42;
-    padding: 10px;
-    height: 300px;
-    overflow-y: auto;
-    font-size: 12px;
+  background: #1e1e1e;
+  border: 1px solid #3e3e42;
+  padding: 10px;
+  height: 300px;
+  overflow-y: auto;
+  font-size: 12px;
 }
 
 .log-entry {
-    margin: 5px 0;
-    padding: 5px;
-    border-left: 3px solid #3e3e42;
-    padding-left: 10px;
+  margin: 5px 0;
+  padding: 5px;
+  border-left: 3px solid #3e3e42;
+  padding-left: 10px;
 }
 
 .log-entry.sent {
-    border-left-color: #569cd6;
+  border-left-color: #569cd6;
 }
 
 .log-entry.received {
-    border-left-color: #4ec9b0;
+  border-left-color: #4ec9b0;
 }
 
 .log-entry.error {
-    border-left-color: #f48771;
+  border-left-color: #f48771;
 }
 
 .event-group {
-    margin-bottom: 15px;
+  margin-bottom: 15px;
 }
 
 .event-group h3 {
-    font-size: 12px;
-    color: #569cd6;
-    margin-bottom: 8px;
+  font-size: 12px;
+  color: #569cd6;
+  margin-bottom: 8px;
 }
 
 .form-row {
-    margin: 5px 0;
+  margin: 5px 0;
 }
 
 label {
-    display: inline-block;
-    width: 120px;
-    font-size: 12px;
+  display: inline-block;
+  width: 120px;
+  font-size: 12px;
 }
 
 /* Grid layouts */
 .connection-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 15px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 15px;
 }
 
 .main-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    align-items: start;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  align-items: start;
 }
 
 .events-column {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .logs-column {
-    position: sticky;
-    top: 20px;
+  position: sticky;
+  top: 20px;
 }
 
 .logs-section #logs {
-    height: 600px;
+  height: 600px;
 }
 
 /* Responsive design */
 @media (max-width: 1200px) {
-    .main-grid {
-        grid-template-columns: 1fr;
-    }
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
 
-    .logs-column {
-        position: static;
-    }
+  .logs-column {
+    position: static;
+  }
 
-    .logs-section #logs {
-        height: 300px;
-    }
+  .logs-section #logs {
+    height: 300px;
+  }
 }
 
 @media (max-width: 768px) {
-    .connection-grid {
-        grid-template-columns: 1fr;
-    }
+  .connection-grid {
+    grid-template-columns: 1fr;
+  }
 }
