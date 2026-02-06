@@ -1,7 +1,7 @@
 # Setup du projet
 
-Ce projet est une API REST pour un jeu de cartes Pokemon en ligne avec système de jeu en temps réel. Il utilise *
-*Express**, **TypeScript**, **Prisma ORM**, **PostgreSQL** et **Socket.io**.
+Ce projet est une API REST pour un jeu de cartes Pokemon en ligne avec système de jeu en temps réel. Il utilise \*
+\*Express**, **TypeScript**, **Prisma ORM**, **PostgreSQL** et **Socket.io\*\*.
 
 Ce README vous guidera à travers le setup complet du projet et les différentes fonctionnalités à implémenter.
 
@@ -15,18 +15,18 @@ Choisissez l'une des options suivantes :
 
 **Option 1 : Installation directe de Node.js**
 
-| Système | Lien |
-|---------|------|
+| Système                 | Lien                              |
+| ----------------------- | --------------------------------- |
 | Windows / macOS / Linux | [nodejs.org](https://nodejs.org/) |
 
 **Option 2 : Via nvm (Node Version Manager) - Recommandé**
 
 Permet de gérer plusieurs versions de Node.js facilement.
 
-| Système | Lien |
-|---------|------|
-| macOS / Linux | [nvm](https://github.com/nvm-sh/nvm#installing-and-updating) |
-| Windows | [nvm-windows](https://github.com/coreybutler/nvm-windows/releases) |
+| Système       | Lien                                                               |
+| ------------- | ------------------------------------------------------------------ |
+| macOS / Linux | [nvm](https://github.com/nvm-sh/nvm#installing-and-updating)       |
+| Windows       | [nvm-windows](https://github.com/coreybutler/nvm-windows/releases) |
 
 ### Docker (pour la base de données PostgreSQL)
 
@@ -36,19 +36,19 @@ Choisissez l'une des options suivantes :
 
 Interface graphique incluse, plus simple à utiliser.
 
-| Système | Lien |
-|---------|------|
+| Système | Lien                                                                                         |
+| ------- | -------------------------------------------------------------------------------------------- |
 | Windows | [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/) |
-| macOS | [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/) |
-| Linux | [Docker Desktop for Linux](https://docs.docker.com/desktop/setup/install/linux/) |
+| macOS   | [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/)         |
+| Linux   | [Docker Desktop for Linux](https://docs.docker.com/desktop/setup/install/linux/)             |
 
 **Option 2 : Docker Engine (CLI uniquement)**
 
 Version légère sans interface graphique.
 
-| Système | Lien |
-|---------|------|
-| Linux | [Docker Engine](https://docs.docker.com/engine/install/) |
+| Système        | Lien                                                                    |
+| -------------- | ----------------------------------------------------------------------- |
+| Linux          | [Docker Engine](https://docs.docker.com/engine/install/)                |
 | Windows (WSL2) | [Docker Engine on WSL2](https://docs.docker.com/engine/install/ubuntu/) |
 
 ### Outils optionnels
@@ -82,6 +82,7 @@ DATABASE_URL=postgresql://tcg_user:tcg_password@localhost:5432/tcg_database
 ```
 
 > **Note** :
+>
 > - La variable `DATABASE_URL` est générée automatiquement par Docker Compose. Vous n'avez pas besoin de la modifier.
 
 ### 3. Démarrer la base de données PostgreSQL
@@ -101,6 +102,7 @@ Cette commande démarre un conteneur Docker avec :
 - Password : `tcg_password`
 
 > **Commandes Docker utiles** :
+>
 > ```bash
 > npm run db:stop    # Arrêter la base de données
 > docker ps          # Vérifier que le conteneur tourne
@@ -275,10 +277,10 @@ npm run ts:check     # Vérifie les erreurs TypeScript sans compiler
 Pour vérifier que tout fonctionne correctement :
 
 1. **Serveur** : Visitez http://localhost:3001/api/health
-    - Devrait retourner `{"status":"ok","message":"TCG Backend Server is running"}`
+   - Devrait retourner `{"status":"ok","message":"TCG Backend Server is running"}`
 
 2. **Base de données** : Ouvrez Prisma Studio (`npm run db:studio`)
-    - Vérifiez que les tables `Card` et `User` contiennent des données
+   - Vérifiez que les tables `Card` et `User` contiennent des données
 
 # Comment réaliser ce TP
 
@@ -352,9 +354,9 @@ Une fois le ticket terminé, créez une **Pull Request** vers la branche `main` 
 1. Allez sur GitHub et créez une PR depuis votre branche
 2. **Liez la PR à l'issue** correspondante (utilisez "Closes #1" dans la description)
 3. Remplissez la description de la PR avec :
-    - Ce qui a été fait
-    - Comment tester
-    - Captures d'écran si pertinent
+   - Ce qui a été fait
+   - Comment tester
+   - Captures d'écran si pertinent
 
 > ⚠️ **Important (GitHub Classroom)** : Lors de la création de la PR, GitHub peut proposer de cibler le **repository template** (celui d'origine) au lieu de **votre propre repository**. Assurez-vous que la PR cible bien **votre dépôt** (`votre-username/nom-du-repo`) et non le dépôt template. Si vous voyez une PR qui pointe vers un autre repository, changez le "base repository" pour sélectionner le vôtre.
 
@@ -382,7 +384,7 @@ Après validation du professeur :
 Chaque ticket a une valeur en points indiquée dans l'issue :
 
 | Ticket    | Description                      | Points     |
-|-----------|----------------------------------|------------|
+| --------- | -------------------------------- | ---------- |
 | 1         | Schéma Prisma - Deck et DeckCard | 1 pts      |
 | 2         | Script de seed                   | 1 pts      |
 | 3         | Authentification et sécurisation | 2 pts      |

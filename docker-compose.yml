@@ -12,11 +12,11 @@ services:
       POSTGRES_PASSWORD: tcg_password
       POSTGRES_DB: tcg_database
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - .cache/postgres:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U tcg_user -d tcg_database" ]
+      test: ['CMD-SHELL', 'pg_isready -U tcg_user -d tcg_database']
       interval: 10s
       timeout: 5s
       retries: 5

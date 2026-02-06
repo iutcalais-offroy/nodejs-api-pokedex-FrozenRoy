@@ -1,140 +1,156 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>TCG Socket.io Test Client</title>
-    <link href="style.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet" />
     <script src="/socket.io/socket.io.js"></script>
-</head>
-<body>
-<h1>TCG Socket.io Test Client</h1>
+  </head>
+  <body>
+    <h1>TCG Socket.io Test Client</h1>
 
-<!-- Connection Section -->
-<div class="section">
-    <h2>Connection</h2>
-    <div class="connection-grid">
+    <!-- Connection Section -->
+    <div class="section">
+      <h2>Connection</h2>
+      <div class="connection-grid">
         <!-- Login Form -->
         <div class="event-group">
-            <h3>Sign In (Auto-connect)</h3>
-            <div class="form-row">
-                <label>Email:</label>
-                <input id="loginEmail" placeholder="red@example.com" type="email" value="red@example.com">
-            </div>
-            <div class="form-row">
-                <label>Password:</label>
-                <input id="loginPassword" placeholder="password123" type="password" value="password123">
-            </div>
-            <button onclick="signIn()">Sign In & Connect</button>
+          <h3>Sign In (Auto-connect)</h3>
+          <div class="form-row">
+            <label>Email:</label>
+            <input
+              id="loginEmail"
+              placeholder="red@example.com"
+              type="email"
+              value="red@example.com"
+            />
+          </div>
+          <div class="form-row">
+            <label>Password:</label>
+            <input
+              id="loginPassword"
+              placeholder="password123"
+              type="password"
+              value="password123"
+            />
+          </div>
+          <button onclick="signIn()">Sign In & Connect</button>
         </div>
 
         <!-- Manual Token Connection -->
         <div class="event-group">
-            <h3>Manual Token</h3>
-            <div class="form-row">
-                <label>JWT Token:</label>
-                <input id="token" placeholder="Paste JWT token here" type="text">
-            </div>
-            <button id="connectBtn">Connect</button>
-            <button disabled id="disconnectBtn">Disconnect</button>
+          <h3>Manual Token</h3>
+          <div class="form-row">
+            <label>JWT Token:</label>
+            <input id="token" placeholder="Paste JWT token here" type="text" />
+          </div>
+          <button id="connectBtn">Connect</button>
+          <button disabled id="disconnectBtn">Disconnect</button>
         </div>
+      </div>
+
+      <div class="status disconnected" id="status">Disconnected</div>
     </div>
 
-    <div class="status disconnected" id="status">Disconnected</div>
-</div>
-
-<!-- Main Layout: Events on left, Logs on right -->
-<div class="main-grid">
-    <!-- Left Column: Events -->
-    <div class="events-column">
+    <!-- Main Layout: Events on left, Logs on right -->
+    <div class="main-grid">
+      <!-- Left Column: Events -->
+      <div class="events-column">
         <!-- Room Events -->
         <div class="section">
-            <h2>Room Events</h2>
+          <h2>Room Events</h2>
 
-            <div class="event-group">
-                <h3>GET_ROOMS</h3>
-                <button onclick="getRooms()">Get Rooms List</button>
-            </div>
+          <div class="event-group">
+            <h3>GET_ROOMS</h3>
+            <button onclick="getRooms()">Get Rooms List</button>
+          </div>
 
-            <div class="event-group">
-                <h3>CREATE_ROOM</h3>
-                <div class="form-row">
-                    <label>Deck ID:</label>
-                    <input id="createRoomDeckId" placeholder="deck-id" type="text">
-                </div>
-                <button onclick="createRoom()">Create Room</button>
+          <div class="event-group">
+            <h3>CREATE_ROOM</h3>
+            <div class="form-row">
+              <label>Deck ID:</label>
+              <input id="createRoomDeckId" placeholder="deck-id" type="text" />
             </div>
+            <button onclick="createRoom()">Create Room</button>
+          </div>
 
-            <div class="event-group">
-                <h3>JOIN_ROOM</h3>
-                <div class="form-row">
-                    <label>Room ID:</label>
-                    <input id="joinRoomId" placeholder="room-id" type="text">
-                </div>
-                <div class="form-row">
-                    <label>Deck ID:</label>
-                    <input id="joinRoomDeckId" placeholder="deck-id" type="text">
-                </div>
-                <button onclick="joinRoom()">Join Room</button>
+          <div class="event-group">
+            <h3>JOIN_ROOM</h3>
+            <div class="form-row">
+              <label>Room ID:</label>
+              <input id="joinRoomId" placeholder="room-id" type="text" />
             </div>
+            <div class="form-row">
+              <label>Deck ID:</label>
+              <input id="joinRoomDeckId" placeholder="deck-id" type="text" />
+            </div>
+            <button onclick="joinRoom()">Join Room</button>
+          </div>
         </div>
 
         <!-- Game Events -->
         <div class="section">
-            <h2>Game Events</h2>
+          <h2>Game Events</h2>
 
-            <div class="event-group">
-                <h3>DRAW_CARDS</h3>
-                <div class="form-row">
-                    <label>Room ID:</label>
-                    <input id="drawCardsRoomId" placeholder="room-id" type="text">
-                </div>
-                <button onclick="drawCards()">Draw Cards</button>
+          <div class="event-group">
+            <h3>DRAW_CARDS</h3>
+            <div class="form-row">
+              <label>Room ID:</label>
+              <input id="drawCardsRoomId" placeholder="room-id" type="text" />
             </div>
+            <button onclick="drawCards()">Draw Cards</button>
+          </div>
 
-            <div class="event-group">
-                <h3>PLAY_CARD</h3>
-                <div class="form-row">
-                    <label>Room ID:</label>
-                    <input id="playCardRoomId" placeholder="room-id" type="text">
-                </div>
-                <div class="form-row">
-                    <label>Card Index:</label>
-                    <input id="playCardIndex" max="4" min="0" placeholder="0-4" type="number">
-                </div>
-                <button onclick="playCard()">Play Card</button>
+          <div class="event-group">
+            <h3>PLAY_CARD</h3>
+            <div class="form-row">
+              <label>Room ID:</label>
+              <input id="playCardRoomId" placeholder="room-id" type="text" />
             </div>
+            <div class="form-row">
+              <label>Card Index:</label>
+              <input
+                id="playCardIndex"
+                max="4"
+                min="0"
+                placeholder="0-4"
+                type="number"
+              />
+            </div>
+            <button onclick="playCard()">Play Card</button>
+          </div>
 
-            <div class="event-group">
-                <h3>ATTACK</h3>
-                <div class="form-row">
-                    <label>Room ID:</label>
-                    <input id="attackRoomId" placeholder="room-id" type="text">
-                </div>
-                <button onclick="attack()">Attack</button>
+          <div class="event-group">
+            <h3>ATTACK</h3>
+            <div class="form-row">
+              <label>Room ID:</label>
+              <input id="attackRoomId" placeholder="room-id" type="text" />
             </div>
+            <button onclick="attack()">Attack</button>
+          </div>
 
-            <div class="event-group">
-                <h3>END_TURN</h3>
-                <div class="form-row">
-                    <label>Room ID:</label>
-                    <input id="endTurnRoomId" placeholder="room-id" type="text">
-                </div>
-                <button onclick="endTurn()">End Turn</button>
+          <div class="event-group">
+            <h3>END_TURN</h3>
+            <div class="form-row">
+              <label>Room ID:</label>
+              <input id="endTurnRoomId" placeholder="room-id" type="text" />
             </div>
+            <button onclick="endTurn()">End Turn</button>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <!-- Right Column: Logs -->
-    <div class="logs-column">
+      <!-- Right Column: Logs -->
+      <div class="logs-column">
         <div class="section logs-section">
-            <h2>Logs</h2>
-            <button onclick="clearLogs()">Clear Logs</button>
-            <div id="logs"></div>
+          <h2>Logs</h2>
+          <button onclick="clearLogs()">Clear Logs</button>
+          <div id="logs"></div>
         </div>
+      </div>
     </div>
-</div>
 
-<script src="client.js"></script>
-</body>
+    <script src="client.js"></script>
+  </body>
 </html>

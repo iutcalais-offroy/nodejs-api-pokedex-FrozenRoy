@@ -1,5 +1,18 @@
-import { Router } from "express";
-import { cardsController } from "../controller/cards.controller";
+import { Router } from 'express'
+import { cardsController } from '../controller/cards.controller'
 
-export const cardsRouter = Router();
-cardsRouter.get("/", cardsController.getCards);
+/**
+ * Router pour les routes des cartes Pokemon
+ *
+ * @route GET /api/cards - Récupère toutes les cartes
+ */
+export const cardsRouter = Router()
+
+/**
+ * Route pour récupérer toutes les cartes Pokemon
+ *
+ * @route GET /api/cards
+ * @access Public
+ * @see CardsController.getCards
+ */
+cardsRouter.get('/', cardsController.getCards)

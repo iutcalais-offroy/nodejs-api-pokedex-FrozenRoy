@@ -1,257 +1,260 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import request from 'supertest';
-import { app } from '../src/index';
-import { prismaMock } from './vitest.setup';
-import jwt from 'jsonwebtoken';
+import { describe, expect, it, vi, beforeEach } from 'vitest'
+import request from 'supertest'
+import { app } from '../src/index'
+import { prismaMock } from './vitest.setup'
+import jwt from 'jsonwebtoken'
 
 describe('Decks Endpoints', () => {
-    let token: string;
+  let token: string
 
-    beforeEach(() => {
-        // Créer un token valide pour les tests
-        token = jwt.sign(
-            { userId: 1, email: 'test@example.com' },
-            process.env.JWT_SECRET as string,
-            { expiresIn: '1h' }
-        );
-    });
+  beforeEach(() => {
+    // Créer un token valide pour les tests
+    token = jwt.sign(
+      { userId: 1, email: 'test@example.com' },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '1h' },
+    )
+  })
 
-    // Mock Deck for tests
-    const mockDeck = {
-        id: 10,
+  // Mock Deck for tests
+  const mockDeck = {
+    id: 10,
+    name: 'My Deck',
+    userId: 1,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }
+
+  // Test for create a new deck with the required 10 cards
+  it('POST /api/decks should create a deck with 10 cards', async () => {
+    const mockCards = Array(10).fill({
+      id: 1,
+      name: 'Pikachu',
+      hp: 35,
+      attack: 55,
+      type: 'Electric' as const,
+      pokedexNumber: 25,
+      imgUrl: 'pikachu.png',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+
+    prismaMock.card.findMany.mockResolvedValue(mockCards)
+    prismaMock.deck.create.mockResolvedValue(mockDeck)
+
+    const res = await request(app)
+      .post('/api/decks')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
         name: 'My Deck',
-        userId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date()
-    };
+        cards: [454, 455, 456, 457, 458, 459, 460, 461, 462, 463],
+      })
 
-    // Test for create a new deck with the required 10 cards
-    it('POST /api/decks should create a deck with 10 cards', async () => {
-        const mockCards = Array(10).fill({
-            id: 1,
-            name: 'Pikachu',
-            hp: 35,
-            attack: 55,
-            type: 'Electric' as const,
-            pokedexNumber: 25,
-            imgUrl: 'pikachu.png',
-            createdAt: new Date(),
-            updatedAt: new Date()
-        });
+    expect(res.status).toBe(201)
+    expect(res.body.name).toBe('My Deck')
+  })
 
-        prismaMock.card.findMany.mockResolvedValue(mockCards);
-        prismaMock.deck.create.mockResolvedValue(mockDeck);
+  it('POST /api/decks should return 400 if not 10 cards', async () => {
+    const res = await request(app)
+      .post('/api/decks')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'My Deck', cards: [1, 2, 3] })
 
-        const res = await request(app)
-            .post('/api/decks')
-            .set('Authorization', `Bearer ${token}`)
-            .send({ name: 'My Deck', cards: [454,455,456,457,458,459,460,461,462,463] });
+    expect(res.status).toBe(400)
+    expect(res.body).toHaveProperty('error')
+  })
 
-        expect(res.status).toBe(201);
-        expect(res.body.name).toBe('My Deck');
-    });
+  it('POST /api/decks should return 400 if some cards do not exist', async () => {
+    // Mock seulement 5 cartes trouvées au lieu de 10
+    const mockCards = Array(5).fill({
+      id: 1,
+      name: 'Pikachu',
+      hp: 35,
+      attack: 55,
+      type: 'Electric' as const,
+      pokedexNumber: 25,
+      imgUrl: 'pikachu.png',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
 
-    it('POST /api/decks should return 400 if not 10 cards', async () => {
-        const res = await request(app)
-            .post('/api/decks')
-            .set('Authorization', `Bearer ${token}`)
-            .send({ name: 'My Deck', cards: [1, 2, 3] });
+    prismaMock.card.findMany.mockResolvedValue(mockCards)
 
-        expect(res.status).toBe(400);
-        expect(res.body).toHaveProperty('error');
-    });
+    const res = await request(app)
+      .post('/api/decks')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'My Deck', cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] })
 
-    it('POST /api/decks should return 400 if some cards do not exist', async () => {
-        // Mock seulement 5 cartes trouvées au lieu de 10
-        const mockCards = Array(5).fill({
-            id: 1,
-            name: 'Pikachu',
-            hp: 35,
-            attack: 55,
-            type: 'Electric' as const,
-            pokedexNumber: 25,
-            imgUrl: 'pikachu.png',
-            createdAt: new Date(),
-            updatedAt: new Date()
-        });
+    expect(res.status).toBe(400)
+    expect(res.body).toHaveProperty('error')
+  })
 
-        prismaMock.card.findMany.mockResolvedValue(mockCards);
+  it('POST /api/decks should return 401 without token', async () => {
+    const res = await request(app)
+      .post('/api/decks')
+      .send({ name: 'My Deck', cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] })
 
-        const res = await request(app)
-            .post('/api/decks')
-            .set('Authorization', `Bearer ${token}`)
-            .send({ name: 'My Deck', cards: [1,2,3,4,5,6,7,8,9,10] });
+    expect(res.status).toBe(401)
+  })
 
-        expect(res.status).toBe(400);
-        expect(res.body).toHaveProperty('error');
-    });
+  // Test for retrieving the current user's decks
+  it('GET /api/decks/mine should return user decks', async () => {
+    prismaMock.deck.findMany.mockResolvedValue([mockDeck])
 
-    it('POST /api/decks should return 401 without token', async () => {
-        const res = await request(app)
-            .post('/api/decks')
-            .send({ name: 'My Deck', cards: [1,2,3,4,5,6,7,8,9,10] });
+    const res = await request(app)
+      .get('/api/decks/mine')
+      .set('Authorization', `Bearer ${token}`)
 
-        expect(res.status).toBe(401);
-    });
+    expect(res.status).toBe(200)
+    expect(res.body[0].userId).toBe(1)
+  })
 
-    // Test for retrieving the current user's decks 
-    it('GET /api/decks/mine should return user decks', async () => {
-        prismaMock.deck.findMany.mockResolvedValue([mockDeck]);
+  it('GET /api/decks/mine should return 401 without token', async () => {
+    const res = await request(app).get('/api/decks/mine')
 
-        const res = await request(app)
-            .get('/api/decks/mine')
-            .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(401)
+  })
 
-        expect(res.status).toBe(200);
-        expect(res.body[0].userId).toBe(1);
-    });
+  it('GET /api/decks/mine should return empty array message for user with no decks', async () => {
+    prismaMock.deck.findMany.mockResolvedValue([])
 
-    it('GET /api/decks/mine should return 401 without token', async () => {
-        const res = await request(app).get('/api/decks/mine');
+    const res = await request(app)
+      .get('/api/decks/mine')
+      .set('Authorization', `Bearer ${token}`)
 
-        expect(res.status).toBe(401);
-    });
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveProperty('message')
+  })
 
-    it('GET /api/decks/mine should return empty array message for user with no decks', async () => {
-        prismaMock.deck.findMany.mockResolvedValue([]);
+  it('GET /api/decks/mine should return 500 on server error', async () => {
+    prismaMock.deck.findMany.mockRejectedValue(new Error('DB Error'))
 
-        const res = await request(app)
-            .get('/api/decks/mine')
-            .set('Authorization', `Bearer ${token}`);
+    const res = await request(app)
+      .get('/api/decks/mine')
+      .set('Authorization', `Bearer ${token}`)
 
-        expect(res.status).toBe(200);
-        expect(res.body).toHaveProperty('message');
-    });
+    expect(res.status).toBe(500)
+  })
 
-    it('GET /api/decks/mine should return 500 on server error', async () => {
-        prismaMock.deck.findMany.mockRejectedValue(new Error('DB Error'));
+  // Test for deleting a specific deck by its ID
+  it('DELETE /api/decks/:id should delete if owner', async () => {
+    prismaMock.deck.findUnique.mockResolvedValue(mockDeck)
+    prismaMock.deck.delete.mockResolvedValue(mockDeck)
 
-        const res = await request(app)
-            .get('/api/decks/mine')
-            .set('Authorization', `Bearer ${token}`);
+    const res = await request(app)
+      .delete('/api/decks/10')
+      .set('Authorization', `Bearer ${token}`)
 
-        expect(res.status).toBe(500);
-    });
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveProperty('message')
+  })
 
-    // Test for deleting a specific deck by its ID
-    it('DELETE /api/decks/:id should delete if owner', async () => {
-        prismaMock.deck.findUnique.mockResolvedValue(mockDeck);
-        prismaMock.deck.delete.mockResolvedValue(mockDeck);
+  it('DELETE /api/decks/:id should return 401 without token', async () => {
+    const res = await request(app).delete('/api/decks/10')
 
-        const res = await request(app)
-            .delete('/api/decks/10')
-            .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(401)
+  })
 
-        expect(res.status).toBe(200);
-        expect(res.body).toHaveProperty('message');
-    });
+  it('GET /api/decks/:id should return deck by id', async () => {
+    prismaMock.deck.findFirst.mockResolvedValue(mockDeck)
 
-    it('DELETE /api/decks/:id should return 401 without token', async () => {
-        const res = await request(app).delete('/api/decks/10');
+    const res = await request(app)
+      .get('/api/decks/10')
+      .set('Authorization', `Bearer ${token}`)
 
-        expect(res.status).toBe(401);
-    });
+    expect(res.status).toBe(200)
+    expect(res.body.id).toBe(10)
+  })
 
-    it('GET /api/decks/:id should return deck by id', async () => {
-        prismaMock.deck.findFirst.mockResolvedValue(mockDeck);
+  it('GET /api/decks/:id should return 404 for non-existent deck', async () => {
+    prismaMock.deck.findFirst.mockResolvedValue(null)
 
-        const res = await request(app)
-            .get('/api/decks/10')
-            .set('Authorization', `Bearer ${token}`);
+    const res = await request(app)
+      .get('/api/decks/999')
+      .set('Authorization', `Bearer ${token}`)
 
-        expect(res.status).toBe(200);
-        expect(res.body.id).toBe(10);
-    });
+    expect(res.status).toBe(404)
+  })
 
-    it('GET /api/decks/:id should return 404 for non-existent deck', async () => {
-        prismaMock.deck.findFirst.mockResolvedValue(null);
+  it('GET /api/decks/:id should return 403 for deck owned by another user', async () => {
+    const otherUserDeck = { ...mockDeck, userId: 2 }
+    prismaMock.deck.findFirst.mockResolvedValue(otherUserDeck)
 
-        const res = await request(app)
-            .get('/api/decks/999')
-            .set('Authorization', `Bearer ${token}`);
+    const res = await request(app)
+      .get('/api/decks/10')
+      .set('Authorization', `Bearer ${token}`)
 
-        expect(res.status).toBe(404);
-    });
+    expect(res.status).toBe(403)
+  })
 
-    it('GET /api/decks/:id should return 403 for deck owned by another user', async () => {
-        const otherUserDeck = { ...mockDeck, userId: 2 };
-        prismaMock.deck.findFirst.mockResolvedValue(otherUserDeck);
+  it('GET /api/decks/:id should return 500 on server error', async () => {
+    prismaMock.deck.findFirst.mockRejectedValue(new Error('DB Error'))
 
-        const res = await request(app)
-            .get('/api/decks/10')
-            .set('Authorization', `Bearer ${token}`);
+    const res = await request(app)
+      .get('/api/decks/10')
+      .set('Authorization', `Bearer ${token}`)
 
-        expect(res.status).toBe(403);
-    });
+    expect(res.status).toBe(500)
+  })
 
-    it('GET /api/decks/:id should return 500 on server error', async () => {
-        prismaMock.deck.findFirst.mockRejectedValue(new Error('DB Error'));
+  it('PATCH /api/decks/:id should update deck', async () => {
+    const updatedDeck = { ...mockDeck, name: 'Updated Deck' }
+    const mockCards = Array(10).fill({
+      id: 1,
+      name: 'Pikachu',
+      hp: 35,
+      attack: 55,
+      type: 'Electric' as const,
+      pokedexNumber: 25,
+      imgUrl: 'pikachu.png',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
 
-        const res = await request(app)
-            .get('/api/decks/10')
-            .set('Authorization', `Bearer ${token}`);
+    prismaMock.deck.findMany.mockResolvedValue([mockDeck])
+    prismaMock.card.findMany.mockResolvedValue(mockCards)
+    prismaMock.deck.update.mockResolvedValue(updatedDeck)
 
-        expect(res.status).toBe(500);
-    });
+    const res = await request(app)
+      .patch('/api/decks/10')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Updated Deck', cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] })
 
-    it('PATCH /api/decks/:id should update deck', async () => {
-        const updatedDeck = { ...mockDeck, name: 'Updated Deck' };
-        const mockCards = Array(10).fill({
-            id: 1,
-            name: 'Pikachu',
-            hp: 35,
-            attack: 55,
-            type: 'Electric' as const,
-            pokedexNumber: 25,
-            imgUrl: 'pikachu.png',
-            createdAt: new Date(),
-            updatedAt: new Date()
-        });
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveProperty('message')
+  })
 
-        prismaMock.deck.findMany.mockResolvedValue([mockDeck]);
-        prismaMock.card.findMany.mockResolvedValue(mockCards);
-        prismaMock.deck.update.mockResolvedValue(updatedDeck);
+  it('PATCH /api/decks/:id should return 404 for non-existent deck', async () => {
+    prismaMock.deck.findMany.mockResolvedValue([])
 
-        const res = await request(app)
-            .patch('/api/decks/10')
-            .set('Authorization', `Bearer ${token}`)
-            .send({ name: 'Updated Deck', cards: [1,2,3,4,5,6,7,8,9,10] });
+    const res = await request(app)
+      .patch('/api/decks/999')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Updated' })
 
-        expect(res.status).toBe(200);
-        expect(res.body).toHaveProperty('message');
-    });
+    expect(res.status).toBe(404)
+  })
 
-    it('PATCH /api/decks/:id should return 404 for non-existent deck', async () => {
-        prismaMock.deck.findMany.mockResolvedValue([]);
+  it('PATCH /api/decks/:id should return 404 for deck owned by another user', async () => {
+    const otherUserDeck = { ...mockDeck, userId: 2 }
+    prismaMock.deck.findMany.mockResolvedValue([otherUserDeck])
 
-        const res = await request(app)
-            .patch('/api/decks/999')
-            .set('Authorization', `Bearer ${token}`)
-            .send({ name: 'Updated' });
+    const res = await request(app)
+      .patch('/api/decks/10')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Updated' })
 
-        expect(res.status).toBe(404);
-    });
+    expect(res.status).toBe(404)
+  })
 
-    it('PATCH /api/decks/:id should return 404 for deck owned by another user', async () => {
-        const otherUserDeck = { ...mockDeck, userId: 2 };
-        prismaMock.deck.findMany.mockResolvedValue([otherUserDeck]);
+  it('PATCH /api/decks/:id should return 500 on server error', async () => {
+    prismaMock.deck.findMany.mockRejectedValue(new Error('DB Error'))
 
-        const res = await request(app)
-            .patch('/api/decks/10')
-            .set('Authorization', `Bearer ${token}`)
-            .send({ name: 'Updated' });
+    const res = await request(app)
+      .patch('/api/decks/10')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Updated' })
 
-        expect(res.status).toBe(404);
-    });
-
-    it('PATCH /api/decks/:id should return 500 on server error', async () => {
-        prismaMock.deck.findMany.mockRejectedValue(new Error('DB Error'));
-
-        const res = await request(app)
-            .patch('/api/decks/10')
-            .set('Authorization', `Bearer ${token}`)
-            .send({ name: 'Updated' });
-
-        expect(res.status).toBe(500);
-    });
-});
+    expect(res.status).toBe(500)
+  })
+})
