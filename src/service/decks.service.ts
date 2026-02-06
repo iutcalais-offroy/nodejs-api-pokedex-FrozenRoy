@@ -111,10 +111,13 @@ export class DecksService {
 
     async deleteDeck(deckId: number, userId: number) {
         const deck = await prisma.deck.findUnique({
-            where: { id: deckId , userId}
+            where: { id: deckId }
         });
         if (!deck) {
-            return null
+            return null;
+        }
+        if (deck.userId !== userId) {
+            return null;
         }
         await prisma.deckCard.deleteMany({
             where: { deckId }
