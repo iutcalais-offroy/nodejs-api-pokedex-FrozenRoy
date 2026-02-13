@@ -4,9 +4,6 @@
   "author": "",
   "description": "TCG Pokemon-like Backend Server",
   "main": "dist/index.js",
-  "engines": {
-    "node": ">=22.0.0"
-  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
