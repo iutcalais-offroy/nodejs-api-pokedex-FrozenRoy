@@ -28,11 +28,11 @@ components:
           example: 1
         username:
           type: string
-          example: "johndoe"
+          example: 'johndoe'
         email:
           type: string
           format: email
-          example: "user@example.com"
+          example: 'user@example.com'
         createdAt:
           type: string
           format: date-time
@@ -52,7 +52,7 @@ components:
           example: 1
         name:
           type: string
-          example: "Pikachu"
+          example: 'Pikachu'
         hp:
           type: integer
           example: 60
@@ -61,15 +61,35 @@ components:
           example: 55
         type:
           type: string
-          enum: [Normal, Fire, Water, Electric, Grass, Ice, Fighting, Poison, Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Dark, Steel, Fairy]
-          example: "Electric"
+          enum:
+            [
+              Normal,
+              Fire,
+              Water,
+              Electric,
+              Grass,
+              Ice,
+              Fighting,
+              Poison,
+              Ground,
+              Flying,
+              Psychic,
+              Bug,
+              Rock,
+              Ghost,
+              Dragon,
+              Dark,
+              Steel,
+              Fairy,
+            ]
+          example: 'Electric'
         pokedexNumber:
           type: integer
           example: 25
         imgUrl:
           type: string
           nullable: true
-          example: "https://example.com/pikachu.png"
+          example: 'https://example.com/pikachu.png'
         createdAt:
           type: string
           format: date-time
@@ -107,7 +127,7 @@ components:
           example: 1
         name:
           type: string
-          example: "Mon deck Electric"
+          example: 'Mon deck Electric'
         userId:
           type: integer
           example: 1
@@ -132,11 +152,11 @@ components:
         email:
           type: string
           format: email
-          example: "user@example.com"
+          example: 'user@example.com'
         password:
           type: string
           format: password
-          example: "securePassword123"
+          example: 'securePassword123'
       required:
         - email
         - password
@@ -147,14 +167,14 @@ components:
         email:
           type: string
           format: email
-          example: "user@example.com"
+          example: 'user@example.com'
         username:
           type: string
-          example: "johndoe"
+          example: 'johndoe'
         password:
           type: string
           format: password
-          example: "securePassword123"
+          example: 'securePassword123'
       required:
         - email
         - username
@@ -165,10 +185,10 @@ components:
       properties:
         message:
           type: string
-          example: "Connexion réussie"
+          example: 'Connexion réussie'
         token:
           type: string
-          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
         user:
           type: object
           properties:
@@ -177,17 +197,17 @@ components:
               example: 1
             username:
               type: string
-              example: "johndoe"
+              example: 'johndoe'
             email:
               type: string
-              example: "user@example.com"
+              example: 'user@example.com'
 
     CreateDeckRequest:
       type: object
       properties:
         name:
           type: string
-          example: "Mon deck Fire"
+          example: 'Mon deck Fire'
         cardIds:
           type: array
           items:
@@ -201,7 +221,7 @@ components:
       properties:
         name:
           type: string
-          example: "Mon deck Water mis à jour"
+          example: 'Mon deck Water mis à jour'
         cardIds:
           type: array
           items:
@@ -220,4 +240,4 @@ components:
       properties:
         message:
           type: string
-          example: "Opération réussie"
+          example: 'Opération réussie'

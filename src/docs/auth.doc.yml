@@ -15,9 +15,9 @@ paths:
               example1:
                 summary: Exemple d'inscription
                 value:
-                  email: "user@example.com"
-                  username: "johndoe"
-                  password: "securePassword123"
+                  email: 'user@example.com'
+                  username: 'johndoe'
+                  password: 'securePassword123'
       responses:
         '201':
           description: Utilisateur créé avec succès
@@ -28,12 +28,12 @@ paths:
               examples:
                 success:
                   value:
-                    message: "Utilisateur créé avec succès"
-                    token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    message: 'Utilisateur créé avec succès'
+                    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
                     user:
                       id: 1
-                      username: "johndoe"
-                      email: "user@example.com"
+                      username: 'johndoe'
+                      email: 'user@example.com'
         '400':
           description: Champs manquants
           content:
@@ -43,7 +43,7 @@ paths:
               examples:
                 missingFields:
                   value:
-                    error: "Email, username et mot de passe sont requis"
+                    error: 'Email, username et mot de passe sont requis'
         '409':
           description: Email déjà utilisé
           content:
@@ -53,7 +53,7 @@ paths:
               examples:
                 emailExists:
                   value:
-                    error: "Un utilisateur avec cet email existe déjà"
+                    error: 'Un utilisateur avec cet email existe déjà'
         '500':
           description: Erreur serveur
           content:
@@ -63,7 +63,7 @@ paths:
               examples:
                 serverError:
                   value:
-                    error: "Erreur serveur"
+                    error: 'Erreur serveur'
 
   /api/auth/sign-in:
     post:
@@ -81,8 +81,8 @@ paths:
               example1:
                 summary: Exemple de connexion
                 value:
-                  email: "user@example.com"
-                  password: "securePassword123"
+                  email: 'user@example.com'
+                  password: 'securePassword123'
       responses:
         '200':
           description: Connexion réussie
@@ -93,12 +93,12 @@ paths:
               examples:
                 success:
                   value:
-                    message: "Connexion réussie"
-                    token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    message: 'Connexion réussie'
+                    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
                     user:
                       id: 1
-                      username: "johndoe"
-                      email: "user@example.com"
+                      username: 'johndoe'
+                      email: 'user@example.com'
         '401':
           description: Échec d'authentification
           content:
@@ -108,7 +108,7 @@ paths:
               examples:
                 invalidCredentials:
                   value:
-                    error: "Email ou mot de passe incorrect"
+                    error: 'Email ou mot de passe incorrect'
         '500':
           description: Erreur serveur
           content:
@@ -118,4 +118,4 @@ paths:
               examples:
                 serverError:
                   value:
-                    error: "Erreur serveur"
+                    error: 'Erreur serveur'

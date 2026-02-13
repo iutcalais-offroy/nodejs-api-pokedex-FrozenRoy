@@ -17,12 +17,12 @@ paths:
               withCards:
                 summary: Deck avec cartes
                 value:
-                  name: "Mon deck Fire"
+                  name: 'Mon deck Fire'
                   cardIds: [1, 4, 6]
               withoutCards:
                 summary: Deck vide
                 value:
-                  name: "Mon deck Water"
+                  name: 'Mon deck Water'
       responses:
         '201':
           description: Deck créé avec succès
@@ -34,20 +34,20 @@ paths:
                 success:
                   value:
                     id: 1
-                    name: "Mon deck Fire"
+                    name: 'Mon deck Fire'
                     userId: 1
-                    createdAt: "2024-01-01T00:00:00.000Z"
-                    updatedAt: "2024-01-01T00:00:00.000Z"
+                    createdAt: '2024-01-01T00:00:00.000Z'
+                    updatedAt: '2024-01-01T00:00:00.000Z'
                     deckcard:
                       - id: 1
                         deckId: 1
                         cardId: 1
                         card:
                           id: 1
-                          name: "Pikachu"
+                          name: 'Pikachu'
                           hp: 60
                           attack: 55
-                          type: "Electric"
+                          type: 'Electric'
                           pokedexNumber: 25
         '400':
           description: Requête invalide (nom manquant ou cardIds invalides)
@@ -58,7 +58,7 @@ paths:
               examples:
                 missingName:
                   value:
-                    error: "Le nom du deck est requis"
+                    error: 'Le nom du deck est requis'
         '401':
           description: Non authentifié
           content:
@@ -68,7 +68,7 @@ paths:
               examples:
                 unauthorized:
                   value:
-                    error: "Token manquant ou invalide"
+                    error: 'Token manquant ou invalide'
         '500':
           description: Erreur serveur
           content:
@@ -97,26 +97,26 @@ paths:
                 success:
                   value:
                     - id: 1
-                      name: "Mon deck Fire"
+                      name: 'Mon deck Fire'
                       userId: 1
-                      createdAt: "2024-01-01T00:00:00.000Z"
-                      updatedAt: "2024-01-01T00:00:00.000Z"
+                      createdAt: '2024-01-01T00:00:00.000Z'
+                      updatedAt: '2024-01-01T00:00:00.000Z'
                       deckcard:
                         - id: 1
                           deckId: 1
                           cardId: 4
                           card:
                             id: 4
-                            name: "Charmander"
+                            name: 'Charmander'
                             hp: 50
                             attack: 52
-                            type: "Fire"
+                            type: 'Fire'
                             pokedexNumber: 4
                     - id: 2
-                      name: "Mon deck Water"
+                      name: 'Mon deck Water'
                       userId: 1
-                      createdAt: "2024-01-01T00:00:00.000Z"
-                      updatedAt: "2024-01-01T00:00:00.000Z"
+                      createdAt: '2024-01-01T00:00:00.000Z'
+                      updatedAt: '2024-01-01T00:00:00.000Z'
                       deckcard: []
         '401':
           description: Non authentifié
@@ -127,7 +127,7 @@ paths:
               examples:
                 unauthorized:
                   value:
-                    error: "Token manquant ou invalide"
+                    error: 'Token manquant ou invalide'
         '500':
           description: Erreur serveur
           content:
@@ -162,20 +162,20 @@ paths:
                 success:
                   value:
                     id: 1
-                    name: "Mon deck Fire"
+                    name: 'Mon deck Fire'
                     userId: 1
-                    createdAt: "2024-01-01T00:00:00.000Z"
-                    updatedAt: "2024-01-01T00:00:00.000Z"
+                    createdAt: '2024-01-01T00:00:00.000Z'
+                    updatedAt: '2024-01-01T00:00:00.000Z'
                     deckcard:
                       - id: 1
                         deckId: 1
                         cardId: 4
                         card:
                           id: 4
-                          name: "Charmander"
+                          name: 'Charmander'
                           hp: 50
                           attack: 52
-                          type: "Fire"
+                          type: 'Fire'
                           pokedexNumber: 4
         '401':
           description: Non authentifié
@@ -202,7 +202,7 @@ paths:
               examples:
                 notFound:
                   value:
-                    error: "Deck non trouvé"
+                    error: 'Deck non trouvé'
         '500':
           description: Erreur serveur
           content:
@@ -235,7 +235,7 @@ paths:
               updateName:
                 summary: Modifier uniquement le nom
                 value:
-                  name: "Mon nouveau deck Fire"
+                  name: 'Mon nouveau deck Fire'
               updateCards:
                 summary: Modifier uniquement les cartes
                 value:
@@ -243,7 +243,7 @@ paths:
               updateBoth:
                 summary: Modifier nom et cartes
                 value:
-                  name: "Mon deck Water mis à jour"
+                  name: 'Mon deck Water mis à jour'
                   cardIds: [7, 8, 9, 134, 143]
       responses:
         '200':
@@ -256,20 +256,20 @@ paths:
                 success:
                   value:
                     id: 1
-                    name: "Mon nouveau deck Fire"
+                    name: 'Mon nouveau deck Fire'
                     userId: 1
-                    createdAt: "2024-01-01T00:00:00.000Z"
-                    updatedAt: "2024-01-02T00:00:00.000Z"
+                    createdAt: '2024-01-01T00:00:00.000Z'
+                    updatedAt: '2024-01-02T00:00:00.000Z'
                     deckcard:
                       - id: 2
                         deckId: 1
                         cardId: 7
                         card:
                           id: 7
-                          name: "Squirtle"
+                          name: 'Squirtle'
                           hp: 44
                           attack: 48
-                          type: "Water"
+                          type: 'Water'
                           pokedexNumber: 7
         '400':
           description: Requête invalide
@@ -327,7 +327,7 @@ paths:
               examples:
                 success:
                   value:
-                    message: "Deck supprimé avec succès"
+                    message: 'Deck supprimé avec succès'
         '401':
           description: Non authentifié
           content:
@@ -349,7 +349,7 @@ paths:
               examples:
                 notFound:
                   value:
-                    error: "Deck non trouvé"
+                    error: 'Deck non trouvé'
         '500':
           description: Erreur serveur
           content:
