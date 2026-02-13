@@ -22,7 +22,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run linter
         run: npm run lint
@@ -31,7 +31,7 @@ jobs:
         run: npm run format:check
 
       - name: Run type checking
-        run: npm run typecheck
+        run: npm run ts:check
 
       - name: Run tests
         run: npm run test
