@@ -24,6 +24,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: postgresql://tcg_user:tcg_password@localhost:5432/tcg_database
+
       - name: Run linter
         run: npm run lint
 
@@ -31,7 +36,7 @@ jobs:
         run: npm run format:check
 
       - name: Run type checking
-        run: npm run typecheck
+        run: npm run ts:check
 
       - name: Run tests
         run: npm run test
