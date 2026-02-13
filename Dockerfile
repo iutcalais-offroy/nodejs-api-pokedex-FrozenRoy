@@ -1,17 +1,32 @@
-FROM node:20-alpine
+# Stage 1: Build
+FROM node:20-alpine AS builder
 WORKDIR /app
+
+# Copier les fichiers de dépendances
 COPY package*.json ./
-RUN npm install
+RUN npm ci --quiet
+
+# Copier le code source
 COPY . .
 
-ENV DATABASE_URL="postgresql://tcg_user:tcg_password@localhost:5432/tcg_database"
-
+# Générer le client Prisma et compiler TypeScript
 RUN npx prisma generate
-RUN npm run prebuild
 RUN npm run build
 
+# Stage 2: Production
+FROM node:20-alpine
 WORKDIR /app
 
-ENV MODE_ENV=production
+# Copier seulement les fichiers nécessaires
+COPY package*.json ./
+RUN npm ci --omit=dev --quiet
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/generated ./src/generated
+COPY --from=builder /app/prisma ./prisma
+
+ENV NODE_ENV=production
+
+EXPOSE 3000
 
 CMD ["node", "dist/index.js"]
