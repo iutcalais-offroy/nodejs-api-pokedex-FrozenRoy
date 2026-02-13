@@ -1,0 +1,358 @@
+paths:
+  /api/decks:
+    post:
+      tags:
+        - Decks
+      summary: Créer un nouveau deck
+      description: Crée un nouveau deck pour l'utilisateur authentifié. Peut optionnellement inclure des cartes via cardIds.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDeckRequest'
+            examples:
+              withCards:
+                summary: Deck avec cartes
+                value:
+                  name: "Mon deck Fire"
+                  cardIds: [1, 4, 6]
+              withoutCards:
+                summary: Deck vide
+                value:
+                  name: "Mon deck Water"
+      responses:
+        '201':
+          description: Deck créé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deck'
+              examples:
+                success:
+                  value:
+                    id: 1
+                    name: "Mon deck Fire"
+                    userId: 1
+                    createdAt: "2024-01-01T00:00:00.000Z"
+                    updatedAt: "2024-01-01T00:00:00.000Z"
+                    deckcard:
+                      - id: 1
+                        deckId: 1
+                        cardId: 1
+                        card:
+                          id: 1
+                          name: "Pikachu"
+                          hp: 60
+                          attack: 55
+                          type: "Electric"
+                          pokedexNumber: 25
+        '400':
+          description: Requête invalide (nom manquant ou cardIds invalides)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingName:
+                  value:
+                    error: "Le nom du deck est requis"
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unauthorized:
+                  value:
+                    error: "Token manquant ou invalide"
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/decks/mine:
+    get:
+      tags:
+        - Decks
+      summary: Récupérer mes decks
+      description: Retourne tous les decks appartenant à l'utilisateur authentifié avec leurs cartes.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste des decks récupérée avec succès
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Deck'
+              examples:
+                success:
+                  value:
+                    - id: 1
+                      name: "Mon deck Fire"
+                      userId: 1
+                      createdAt: "2024-01-01T00:00:00.000Z"
+                      updatedAt: "2024-01-01T00:00:00.000Z"
+                      deckcard:
+                        - id: 1
+                          deckId: 1
+                          cardId: 4
+                          card:
+                            id: 4
+                            name: "Charmander"
+                            hp: 50
+                            attack: 52
+                            type: "Fire"
+                            pokedexNumber: 4
+                    - id: 2
+                      name: "Mon deck Water"
+                      userId: 1
+                      createdAt: "2024-01-01T00:00:00.000Z"
+                      updatedAt: "2024-01-01T00:00:00.000Z"
+                      deckcard: []
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unauthorized:
+                  value:
+                    error: "Token manquant ou invalide"
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/decks/{id}:
+    get:
+      tags:
+        - Decks
+      summary: Récupérer un deck par ID
+      description: Retourne les détails d'un deck spécifique avec ses cartes. L'utilisateur doit être propriétaire du deck.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID du deck
+          example: 1
+      responses:
+        '200':
+          description: Deck récupéré avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deck'
+              examples:
+                success:
+                  value:
+                    id: 1
+                    name: "Mon deck Fire"
+                    userId: 1
+                    createdAt: "2024-01-01T00:00:00.000Z"
+                    updatedAt: "2024-01-01T00:00:00.000Z"
+                    deckcard:
+                      - id: 1
+                        deckId: 1
+                        cardId: 4
+                        card:
+                          id: 4
+                          name: "Charmander"
+                          hp: 50
+                          attack: 52
+                          type: "Fire"
+                          pokedexNumber: 4
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Non autorisé (pas propriétaire du deck)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                forbidden:
+                  value:
+                    error: "Vous n'avez pas accès à ce deck"
+        '404':
+          description: Deck non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  value:
+                    error: "Deck non trouvé"
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      tags:
+        - Decks
+      summary: Mettre à jour un deck
+      description: Met à jour le nom et/ou les cartes d'un deck. L'utilisateur doit être propriétaire du deck.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID du deck
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDeckRequest'
+            examples:
+              updateName:
+                summary: Modifier uniquement le nom
+                value:
+                  name: "Mon nouveau deck Fire"
+              updateCards:
+                summary: Modifier uniquement les cartes
+                value:
+                  cardIds: [7, 8, 9]
+              updateBoth:
+                summary: Modifier nom et cartes
+                value:
+                  name: "Mon deck Water mis à jour"
+                  cardIds: [7, 8, 9, 134, 143]
+      responses:
+        '200':
+          description: Deck mis à jour avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deck'
+              examples:
+                success:
+                  value:
+                    id: 1
+                    name: "Mon nouveau deck Fire"
+                    userId: 1
+                    createdAt: "2024-01-01T00:00:00.000Z"
+                    updatedAt: "2024-01-02T00:00:00.000Z"
+                    deckcard:
+                      - id: 2
+                        deckId: 1
+                        cardId: 7
+                        card:
+                          id: 7
+                          name: "Squirtle"
+                          hp: 44
+                          attack: 48
+                          type: "Water"
+                          pokedexNumber: 7
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Non autorisé (pas propriétaire du deck)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Deck non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Decks
+      summary: Supprimer un deck
+      description: Supprime définitivement un deck et toutes ses cartes associées. L'utilisateur doit être propriétaire du deck.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID du deck
+          example: 1
+      responses:
+        '200':
+          description: Deck supprimé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+              examples:
+                success:
+                  value:
+                    message: "Deck supprimé avec succès"
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Non autorisé (pas propriétaire du deck)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Deck non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  value:
+                    error: "Deck non trouvé"
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

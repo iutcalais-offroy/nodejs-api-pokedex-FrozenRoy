@@ -1,0 +1,223 @@
+openapi: 3.0.0
+info:
+  title: Pokedex TCG API
+  version: 1.0.0
+  description: API de gestion de cartes Pokémon et de decks avec authentification JWT
+  contact:
+    name: Leo dehame
+    email: leo.dehame@etu.univ-littoral.fr
+
+servers:
+  - url: http://localhost:3001
+    description: Serveur de développement
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Authentification JWT. Utilisez le token retourné lors de l'inscription ou de la connexion.
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: "johndoe"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - username
+        - email
+
+    Card:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Pikachu"
+        hp:
+          type: integer
+          example: 60
+        attack:
+          type: integer
+          example: 55
+        type:
+          type: string
+          enum: [Normal, Fire, Water, Electric, Grass, Ice, Fighting, Poison, Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Dark, Steel, Fairy]
+          example: "Electric"
+        pokedexNumber:
+          type: integer
+          example: 25
+        imgUrl:
+          type: string
+          nullable: true
+          example: "https://example.com/pikachu.png"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - hp
+        - attack
+        - type
+        - pokedexNumber
+
+    DeckCard:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        deckId:
+          type: integer
+          example: 1
+        cardId:
+          type: integer
+          example: 25
+        card:
+          $ref: '#/components/schemas/Card'
+
+    Deck:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Mon deck Electric"
+        userId:
+          type: integer
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deckcard:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeckCard'
+      required:
+        - id
+        - name
+        - userId
+
+    AuthRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          format: password
+          example: "securePassword123"
+      required:
+        - email
+        - password
+
+    SignUpRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        username:
+          type: string
+          example: "johndoe"
+        password:
+          type: string
+          format: password
+          example: "securePassword123"
+      required:
+        - email
+        - username
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Connexion réussie"
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            username:
+              type: string
+              example: "johndoe"
+            email:
+              type: string
+              example: "user@example.com"
+
+    CreateDeckRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Mon deck Fire"
+        cardIds:
+          type: array
+          items:
+            type: integer
+          example: [1, 4, 6]
+      required:
+        - name
+
+    UpdateDeckRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Mon deck Water mis à jour"
+        cardIds:
+          type: array
+          items:
+            type: integer
+          example: [7, 8, 9]
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Message d'erreur"
+
+    SuccessMessage:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Opération réussie"

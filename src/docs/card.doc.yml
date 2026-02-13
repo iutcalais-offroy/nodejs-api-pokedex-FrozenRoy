@@ -1,0 +1,47 @@
+paths:
+  /api/cards:
+    get:
+      tags:
+        - Cards
+      summary: Récupérer toutes les cartes Pokemon
+      description: Retourne la liste complète de toutes les cartes Pokemon disponibles dans la base de données.
+      responses:
+        '200':
+          description: Liste des cartes récupérée avec succès
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Card'
+              examples:
+                success:
+                  value:
+                    - id: 1
+                      name: "Pikachu"
+                      hp: 60
+                      attack: 55
+                      type: "Electric"
+                      pokedexNumber: 25
+                      imgUrl: "https://example.com/pikachu.png"
+                      createdAt: "2024-01-01T00:00:00.000Z"
+                      updatedAt: "2024-01-01T00:00:00.000Z"
+                    - id: 4
+                      name: "Charmander"
+                      hp: 50
+                      attack: 52
+                      type: "Fire"
+                      pokedexNumber: 4
+                      imgUrl: "https://example.com/charmander.png"
+                      createdAt: "2024-01-01T00:00:00.000Z"
+                      updatedAt: "2024-01-01T00:00:00.000Z"
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                serverError:
+                  value:
+                    error: "Erreur lors de la récupération des cartes"

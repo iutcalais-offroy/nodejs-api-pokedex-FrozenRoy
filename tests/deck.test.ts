@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { describe, expect, it, beforeEach } from 'vitest'
 import request from 'supertest'
 import { app } from '../src/index'
 import { prismaMock } from './vitest.setup'

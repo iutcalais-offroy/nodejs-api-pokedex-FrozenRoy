@@ -1,0 +1,16 @@
+# Propriétaires par défaut
+* @votre-username
+
+# Backend
+/src/controllers/ @backend-team
+/src/services/ @backend-team
+
+# Database
+/prisma/ @database-team
+*.prisma @database-team
+
+# CI/CD
+/.github/workflows/ @devops-team
+
+# Documentation
+*.md @doc-team
