@@ -3,4 +3,4 @@ dist
 build
 coverage
 .env
-src/generated
+src/generated/
