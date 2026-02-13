@@ -10,6 +10,8 @@ export default defineConfig({
     seed: 'tsx prisma/seed.ts',
   },
   datasource: {
-    url: env('DATABASE_URL'),
+    url:
+      process.env.DATABASE_URL ||
+      'postgresql://tcg_user:tcg_password@localhost:5432/tcg_database',
   },
 })
