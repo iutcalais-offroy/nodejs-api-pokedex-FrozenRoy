@@ -92,11 +92,63 @@ document.getElementById('disconnectBtn').addEventListener('click', () => {
   }
 })
 
+// Deck management
+async function getMyDecks() {
+  const token = document.getElementById('token').value
+  if (!token) return alert('Please sign in first')
+
+  try {
+    log('⬆️ GET /api/decks/mine', 'sent')
+
+    const response = await fetch('/api/decks/mine', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to get decks')
+    }
+
+    log(`⬇️ Decks received: ${JSON.stringify(data, null, 2)}`, 'received')
+
+    // Display decks in UI
+    const myDecksDiv = document.getElementById('myDecks')
+    if (data.length === 0) {
+      myDecksDiv.innerHTML =
+        '<p style="color: orange;">No decks found. Create one first!</p>'
+    } else {
+      myDecksDiv.innerHTML = data
+        .map(
+          (deck) => `
+        <div style="padding: 8px; margin: 4px 0; background: #2a2a2a; border-radius: 4px;">
+          <strong>ID: ${deck.id}</strong> - ${deck.name} (${deck.deckcard?.length || 0} cards)
+        </div>
+      `,
+        )
+        .join('')
+    }
+  } catch (error) {
+    log(`❌ Error getting decks: ${error.message}`, 'error')
+    alert('Failed to get decks: ' + error.message)
+  }
+}
+
 // Room events
 function getRooms() {
   if (!socket) return alert('Not connected')
   log('➡️ getRooms', 'sent')
-  socket.emit('getRooms')
+  socket.emit('getRooms', (response) => {
+    if (response.error) {
+      log(`❌ getRooms error: ${response.error}`, 'error')
+    } else {
+      log(`⬅️ Rooms: ${JSON.stringify(response.rooms, null, 2)}`, 'received')
+    }
+  })
 }
 
 function createRoom() {
@@ -106,7 +158,15 @@ function createRoom() {
 
   const data = { deckId }
   log(`➡️ createRoom: ${JSON.stringify(data)}`, 'sent')
-  socket.emit('createRoom', data)
+  socket.emit('createRoom', data, (response) => {
+    if (response.error) {
+      log(`❌ createRoom error: ${response.error}`, 'error')
+      alert('Failed to create room: ' + response.error)
+    } else {
+      log(`✅ Room created: ${JSON.stringify(response, null, 2)}`, 'received')
+      alert('Room created successfully!')
+    }
+  })
 }
 
 function joinRoom() {
@@ -117,7 +177,15 @@ function joinRoom() {
 
   const data = { roomId, deckId }
   log(`➡️ joinRoom: ${JSON.stringify(data)}`, 'sent')
-  socket.emit('joinRoom', data)
+  socket.emit('joinRoom', data, (response) => {
+    if (response.error) {
+      log(`❌ joinRoom error: ${response.error}`, 'error')
+      alert('Failed to join room: ' + response.error)
+    } else {
+      log(`✅ Joined room: ${JSON.stringify(response, null, 2)}`, 'received')
+      alert('Successfully joined room!')
+    }
+  })
 }
 
 // Game events
