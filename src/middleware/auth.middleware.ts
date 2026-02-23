@@ -1,11 +1,19 @@
 import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
+import { Socket } from 'socket.io'
+import { env } from '../env'
 
 // Étendre le type Request pour ajouter userId
 declare module 'express-serve-static-core' {
   interface Request {
     userId?: number
   }
+}
+
+// Étendre le type Socket pour ajouter les informations utilisateur
+export interface AuthenticatedSocket extends Socket {
+  userId: number
+  email: string
 }
 
 /**
@@ -54,5 +62,56 @@ export const authenticateToken = (
     return next()
   } catch {
     return res.status(401).json({ error: 'Token invalide ou expiré' })
+  }
+}
+
+/**
+ * Middleware d'authentification JWT pour Socket.io
+ * Vérifie la présence et la validité d'un token JWT dans socket.handshake.auth.token
+ * et ajoute les informations utilisateur (userId, email) au socket si le token est valide.
+ *
+ * @param {Socket} socket - Socket Socket.io
+ * @param {Function} next - Fonction middleware suivante
+ * @returns {void} Appel de next() avec ou sans erreur
+ *
+ * @throws {Error} Si le token est manquant
+ * @throws {Error} Si le token est invalide ou expiré
+ *
+ * @example
+ * // Utilisation avec Socket.io
+ * io.use(authenticateSocketToken);
+ *
+ * io.on('connection', (socket: AuthenticatedSocket) => {
+ *   console.log(socket.userId); // ID de l'utilisateur authentifié
+ *   console.log(socket.email); // Email de l'utilisateur authentifié
+ * });
+ */
+export const authenticateSocketToken = (
+  socket: Socket,
+  next: (err?: Error) => void,
+) => {
+  // 1. Récupérer le token depuis socket.handshake.auth
+  const token = socket.handshake.auth.token
+
+  if (!token) {
+    return next(new Error('Token manquant'))
+  }
+
+  try {
+    // 2. Vérifier et décoder le token
+    const decoded = jwt.verify(token, env.JWT_SECRET) as {
+      userId: number
+      email: string
+    }
+
+    // 3. Ajouter les informations utilisateur au socket
+    const authenticatedSocket = socket as AuthenticatedSocket
+    authenticatedSocket.userId = decoded.userId
+    authenticatedSocket.email = decoded.email
+
+    // 4. Passer au prochain middleware
+    next()
+  } catch {
+    return next(new Error('Token invalide ou expiré'))
   }
 }
