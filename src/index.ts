@@ -13,6 +13,9 @@ import {
   authenticateSocketToken,
   AuthenticatedSocket,
 } from './middleware/auth.middleware'
+import { matchmakingService } from './service/matchmaking.service'
+import { CreateRoomParams, JoinRoomParams } from './types/matchmaking.types'
+import { prisma } from './database'
 
 // Create Express app
 export const app = express()
@@ -85,10 +88,195 @@ if (require.main === module) {
       `User authenticated: ${authenticatedSocket.email} (ID: ${authenticatedSocket.userId}) - Socket ID: ${authenticatedSocket.id}`,
     )
 
+    // Événement: createRoom - Créer une room d'attente
+    authenticatedSocket.on(
+      'createRoom',
+      async (params: CreateRoomParams, callback) => {
+        try {
+          // Valider et convertir deckId en nombre
+          const deckId = Number(params.deckId)
+          if (isNaN(deckId)) {
+            if (typeof callback === 'function') {
+              callback({
+                error: 'ID de deck invalide',
+              })
+            }
+            return
+          }
+
+          // Récupérer les informations utilisateur depuis la base
+          const user = await prisma.user.findUnique({
+            where: { id: authenticatedSocket.userId },
+          })
+
+          if (!user) {
+            if (typeof callback === 'function') {
+              callback({
+                error: 'Utilisateur non trouvé',
+              })
+            }
+            return
+          }
+
+          // Créer la room
+          const room = await matchmakingService.createRoom(
+            authenticatedSocket.userId,
+            user.username,
+            user.email,
+            authenticatedSocket.id,
+            deckId,
+          )
+
+          // Rejoindre la room Socket.io
+          authenticatedSocket.join(room.id)
+
+          // Envoyer la confirmation au créateur
+          if (typeof callback === 'function') {
+            callback({
+              success: true,
+              room: {
+                id: room.id,
+                host: {
+                  username: room.host.username,
+                  userId: room.host.userId,
+                },
+                status: room.status,
+                createdAt: room.createdAt,
+              },
+            })
+          }
+
+          // Broadcast la liste mise à jour à tous les clients
+          io.emit('roomsListUpdated', {
+            rooms: matchmakingService.getAvailableRooms(),
+          })
+        } catch (error) {
+          console.error('Error creating room:', error)
+          if (typeof callback === 'function') {
+            callback({
+              error: error instanceof Error ? error.message : 'Erreur inconnue',
+            })
+          }
+        }
+      },
+    )
+
+    // Événement: getRooms - Obtenir la liste des rooms disponibles
+    authenticatedSocket.on('getRooms', (callback) => {
+      try {
+        const rooms = matchmakingService.getAvailableRooms()
+        if (typeof callback === 'function') {
+          callback({
+            success: true,
+            rooms,
+          })
+        }
+      } catch (error) {
+        console.error('Error getting rooms:', error)
+        if (typeof callback === 'function') {
+          callback({
+            error: error instanceof Error ? error.message : 'Erreur inconnue',
+          })
+        }
+      }
+    })
+
+    // Événement: joinRoom - Rejoindre une room et démarrer la partie
+    authenticatedSocket.on(
+      'joinRoom',
+      async (params: JoinRoomParams, callback) => {
+        try {
+          const { roomId } = params
+
+          // Valider et convertir deckId en nombre
+          const deckId = Number(params.deckId)
+          if (isNaN(deckId)) {
+            if (typeof callback === 'function') {
+              callback({
+                error: 'ID de deck invalide',
+              })
+            }
+            return
+          }
+
+          // Récupérer les informations utilisateur depuis la base
+          const user = await prisma.user.findUnique({
+            where: { id: authenticatedSocket.userId },
+          })
+
+          if (!user) {
+            if (typeof callback === 'function') {
+              callback({
+                error: 'Utilisateur non trouvé',
+              })
+            }
+            return
+          }
+
+          // Rejoindre la room et démarrer la partie
+          const { hostGameState, guestGameState } =
+            await matchmakingService.joinRoom(
+              roomId,
+              authenticatedSocket.userId,
+              user.username,
+              user.email,
+              authenticatedSocket.id,
+              deckId,
+            )
+
+          // Rejoindre la room Socket.io
+          authenticatedSocket.join(roomId)
+
+          // Récupérer la room pour avoir les sockets des joueurs
+          const room = matchmakingService.getRoom(roomId)
+          if (!room) {
+            if (typeof callback === 'function') {
+              callback({ error: "La room n'existe pas" })
+            }
+            return
+          }
+
+          // Envoyer l'état de jeu au host
+          io.to(room.host.socketId).emit('gameStarted', hostGameState)
+
+          // Envoyer l'état de jeu au guest
+          io.to(room.guest!.socketId).emit('gameStarted', guestGameState)
+
+          // Callback de succès
+          if (typeof callback === 'function') {
+            callback({
+              success: true,
+              message: 'Partie démarrée',
+            })
+          }
+
+          // Broadcast la liste mise à jour (la room disparaît de la liste)
+          io.emit('roomsListUpdated', {
+            rooms: matchmakingService.getAvailableRooms(),
+          })
+        } catch (error) {
+          console.error('Error joining room:', error)
+          if (typeof callback === 'function') {
+            callback({
+              error: error instanceof Error ? error.message : 'Erreur inconnue',
+            })
+          }
+        }
+      },
+    )
+
     authenticatedSocket.on('disconnect', () => {
       console.log(
         `User disconnected: ${authenticatedSocket.email} - Socket ID: ${authenticatedSocket.id}`,
       )
+
+      // Supprimer le joueur des rooms et notifier
+      matchmakingService.removePlayerFromRooms(authenticatedSocket.id)
+
+      // Broadcast la liste mise à jour
+      io.emit('roomsListUpdated', {
+        rooms: matchmakingService.getAvailableRooms(),
+      })
     })
   })
 

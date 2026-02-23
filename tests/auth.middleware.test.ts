@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   authenticateToken,
   authenticateSocketToken,
+  AuthenticatedSocket,
 } from '../src/middleware/auth.middleware'
 import { Request, Response, NextFunction } from 'express'
 import { Socket } from 'socket.io'
@@ -116,7 +117,7 @@ describe('Auth Middleware', () => {
     authenticateSocketToken(socket, next)
 
     expect(next).toHaveBeenCalledWith()
-    expect((socket as any).userId).toBe(1)
-    expect((socket as any).email).toBe('test@example.com')
+    expect((socket as AuthenticatedSocket).userId).toBe(1)
+    expect((socket as AuthenticatedSocket).email).toBe('test@example.com')
   })
 })
