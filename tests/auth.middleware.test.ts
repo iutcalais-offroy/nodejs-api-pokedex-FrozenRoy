@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-import { authenticateToken } from '../src/middleware/auth.middleware'
+import {
+  authenticateToken,
+  authenticateSocketToken,
+} from '../src/middleware/auth.middleware'
 import { Request, Response, NextFunction } from 'express'
+import { Socket } from 'socket.io'
 import jwt from 'jsonwebtoken'
 
 describe('Auth Middleware', () => {
@@ -70,5 +74,49 @@ describe('Auth Middleware', () => {
     expect(next).toHaveBeenCalled()
     expect(req.userId).toBe(1)
     expect(res.status).not.toHaveBeenCalled()
+  })
+
+  it('should call next with error if socket token is missing', () => {
+    const socket = {
+      handshake: { auth: {} },
+    } as unknown as Socket
+
+    const next = vi.fn()
+
+    authenticateSocketToken(socket, next)
+
+    expect(next).toHaveBeenCalledWith(new Error('Token manquant'))
+  })
+
+  it('should call next with error if socket token is invalid', () => {
+    const socket = {
+      handshake: { auth: { token: 'invalid_token' } },
+    } as unknown as Socket
+
+    const next = vi.fn()
+
+    authenticateSocketToken(socket, next)
+
+    expect(next).toHaveBeenCalledWith(new Error('Token invalide ou expiré'))
+  })
+
+  it('should call next() and add user info to socket if token is valid', () => {
+    const token = jwt.sign(
+      { userId: 1, email: 'test@example.com' },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '1h' },
+    )
+
+    const socket = {
+      handshake: { auth: { token } },
+    } as unknown as Socket
+
+    const next = vi.fn()
+
+    authenticateSocketToken(socket, next)
+
+    expect(next).toHaveBeenCalledWith()
+    expect((socket as any).userId).toBe(1)
+    expect((socket as any).email).toBe('test@example.com')
   })
 })

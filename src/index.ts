@@ -8,6 +8,11 @@ import path from 'path'
 import { authRouter } from './route/auth.route'
 import { cardsRouter } from './route/cards.route'
 import { decksRouter } from './route/decks.route'
+import { Server as SocketIOServer } from 'socket.io'
+import {
+  authenticateSocketToken,
+  AuthenticatedSocket,
+} from './middleware/auth.middleware'
 
 // Create Express app
 export const app = express()
@@ -65,7 +70,28 @@ if (require.main === module) {
   // Create HTTP server
   const httpServer = createServer(app)
 
-  // Start server
+  const io = new SocketIOServer(httpServer, {
+    cors: {
+      origin: true,
+      credentials: true,
+    },
+  })
+
+  io.use(authenticateSocketToken)
+
+  io.on('connection', (socket) => {
+    const authenticatedSocket = socket as AuthenticatedSocket
+    console.log(
+      `User authenticated: ${authenticatedSocket.email} (ID: ${authenticatedSocket.userId}) - Socket ID: ${authenticatedSocket.id}`,
+    )
+
+    authenticatedSocket.on('disconnect', () => {
+      console.log(
+        `User disconnected: ${authenticatedSocket.email} - Socket ID: ${authenticatedSocket.id}`,
+      )
+    })
+  })
+
   try {
     httpServer.listen(env.PORT, () => {
       console.log(`\n🚀 Server is running on http://localhost:${env.PORT}`)
