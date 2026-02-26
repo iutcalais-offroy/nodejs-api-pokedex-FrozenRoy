@@ -310,10 +310,20 @@ describe('Matchmaking Service', () => {
       expect(guestGameState.opponent.hand.length).toBe(0)
       expect(guestGameState.opponent.handSize).toBe(5)
 
-      // Vérifier que la room est maintenant 'ready'
+      // Vérifier que la room est maintenant 'playing'
       const updatedRoom = matchmakingService.getRoom(room.id)
-      expect(updatedRoom?.status).toBe('ready')
+      expect(updatedRoom?.status).toBe('playing')
       expect(updatedRoom?.guest).not.toBeNull()
+
+      // Vérifier les nouveaux champs de jeu
+      expect(hostGameState.player.deckSize).toBe(5) // 10 cartes - 5 en main
+      expect(hostGameState.player.activeCard).toBeNull()
+      expect(hostGameState.player.score).toBe(0)
+      expect(hostGameState.opponent.deckSize).toBe(5)
+      expect(hostGameState.opponent.activeCard).toBeNull()
+      expect(hostGameState.opponent.score).toBe(0)
+      expect(hostGameState.isMyTurn).toBe(true) // Le host commence
+      expect(guestGameState.isMyTurn).toBe(false)
     })
 
     it('should throw error if room does not exist', async () => {
@@ -670,6 +680,578 @@ describe('Matchmaking Service', () => {
       expect(() =>
         matchmakingService.removePlayerFromRooms('non-existent-socket-id'),
       ).not.toThrow()
+    })
+  })
+
+  describe('drawCards', () => {
+    it('should draw cards for host player', async () => {
+      // Créer et rejoindre une partie
+      const mockDeck1 = createMockDeck(
+        deck1Id,
+        user1Id,
+        user1Username,
+        user1Email,
+        10,
+        1,
+      )
+      const mockDeck2 = createMockDeck(
+        deck2Id,
+        user2Id,
+        user2Username,
+        user2Email,
+        10,
+        11,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      const room = await matchmakingService.createRoom(
+        user1Id,
+        user1Username,
+        user1Email,
+        'socket-1',
+        deck1Id,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck2)
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      await matchmakingService.joinRoom(
+        room.id,
+        user2Id,
+        user2Username,
+        user2Email,
+        'socket-2',
+        deck2Id,
+      )
+
+      // Le host joue une carte pour avoir moins de 5 en main
+      const states1 = matchmakingService.playCard(room.id, 'socket-1', 0)
+      expect(states1[0].player.hand.length).toBe(4)
+
+      // Le host pioche
+      const states2 = matchmakingService.drawCards(room.id, 'socket-1')
+
+      expect(states2[0].player.hand.length).toBe(5)
+      expect(states2[0].player.deckSize).toBe(4) // 5 - 1 piochée
+    })
+
+    it('should draw cards for guest player', async () => {
+      // Créer et rejoindre une partie
+      const mockDeck1 = createMockDeck(
+        deck1Id,
+        user1Id,
+        user1Username,
+        user1Email,
+        10,
+        1,
+      )
+      const mockDeck2 = createMockDeck(
+        deck2Id,
+        user2Id,
+        user2Username,
+        user2Email,
+        10,
+        11,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      const room = await matchmakingService.createRoom(
+        user1Id,
+        user1Username,
+        user1Email,
+        'socket-1',
+        deck1Id,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck2)
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      await matchmakingService.joinRoom(
+        room.id,
+        user2Id,
+        user2Username,
+        user2Email,
+        'socket-2',
+        deck2Id,
+      )
+
+      // Le guest joue une carte pour avoir moins de 5 en main
+      const states1 = matchmakingService.playCard(room.id, 'socket-2', 0)
+      expect(states1[1].player.hand.length).toBe(4)
+
+      // Le guest pioche
+      const states2 = matchmakingService.drawCards(room.id, 'socket-2')
+
+      expect(states2[1].player.hand.length).toBe(5)
+      expect(states2[1].player.deckSize).toBe(4)
+    })
+
+    it('should throw error if game does not exist', () => {
+      expect(() =>
+        matchmakingService.drawCards('invalid-room-id', 'socket-1'),
+      ).toThrow("n'existe pas")
+    })
+  })
+
+  describe('playCard', () => {
+    it('should play a card from hand to active position', async () => {
+      // Créer et rejoindre une partie
+      const mockDeck1 = createMockDeck(
+        deck1Id,
+        user1Id,
+        user1Username,
+        user1Email,
+        10,
+        1,
+      )
+      const mockDeck2 = createMockDeck(
+        deck2Id,
+        user2Id,
+        user2Username,
+        user2Email,
+        10,
+        11,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      const room = await matchmakingService.createRoom(
+        user1Id,
+        user1Username,
+        user1Email,
+        'socket-1',
+        deck1Id,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck2)
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      await matchmakingService.joinRoom(
+        room.id,
+        user2Id,
+        user2Username,
+        user2Email,
+        'socket-2',
+        deck2Id,
+      )
+
+      // Jouer une carte
+      const states = matchmakingService.playCard(room.id, 'socket-1', 0)
+
+      expect(states[0].player.hand.length).toBe(4) // 5 - 1
+      expect(states[0].player.activeCard).toBeDefined()
+      expect(states[0].player.activeCard?.currentHp).toBe(
+        states[0].player.activeCard?.hp,
+      )
+    })
+
+    it('should throw error if card index is invalid', async () => {
+      // Créer et rejoindre une partie
+      const mockDeck1 = createMockDeck(
+        deck1Id,
+        user1Id,
+        user1Username,
+        user1Email,
+        10,
+        1,
+      )
+      const mockDeck2 = createMockDeck(
+        deck2Id,
+        user2Id,
+        user2Username,
+        user2Email,
+        10,
+        11,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      const room = await matchmakingService.createRoom(
+        user1Id,
+        user1Username,
+        user1Email,
+        'socket-1',
+        deck1Id,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck2)
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      await matchmakingService.joinRoom(
+        room.id,
+        user2Id,
+        user2Username,
+        user2Email,
+        'socket-2',
+        deck2Id,
+      )
+
+      expect(() =>
+        matchmakingService.playCard(room.id, 'socket-1', 10),
+      ).toThrow('invalide')
+    })
+
+    it('should throw error if game does not exist', () => {
+      expect(() =>
+        matchmakingService.playCard('invalid-room-id', 'socket-1', 0),
+      ).toThrow("n'existe pas")
+    })
+  })
+
+  describe('attack', () => {
+    it('should deal damage to opponent card', async () => {
+      // Créer et rejoindre une partie
+      const mockDeck1 = createMockDeck(
+        deck1Id,
+        user1Id,
+        user1Username,
+        user1Email,
+        10,
+        1,
+      )
+      const mockDeck2 = createMockDeck(
+        deck2Id,
+        user2Id,
+        user2Username,
+        user2Email,
+        10,
+        11,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      const room = await matchmakingService.createRoom(
+        user1Id,
+        user1Username,
+        user1Email,
+        'socket-1',
+        deck1Id,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck2)
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      await matchmakingService.joinRoom(
+        room.id,
+        user2Id,
+        user2Username,
+        user2Email,
+        'socket-2',
+        deck2Id,
+      )
+
+      // Les deux joueurs jouent une carte
+      matchmakingService.playCard(room.id, 'socket-1', 0)
+      matchmakingService.playCard(room.id, 'socket-2', 0)
+
+      // Le host attaque (c'est son tour)
+      const result = matchmakingService.attack(room.id, 'socket-1')
+
+      expect(result.gameEnded).toBe(false)
+      expect(result.states[0].opponent.activeCard?.currentHp).toBeLessThan(100)
+      expect(result.states[0].isMyTurn).toBe(false) // Le tour change après l'attaque
+      expect(result.states[1].isMyTurn).toBe(true)
+    })
+
+    it('should KO opponent card and increase score', async () => {
+      // Créer et rejoindre une partie
+      const mockDeck1 = createMockDeck(
+        deck1Id,
+        user1Id,
+        user1Username,
+        user1Email,
+        10,
+        1,
+      )
+      const mockDeck2 = createMockDeck(
+        deck2Id,
+        user2Id,
+        user2Username,
+        user2Email,
+        10,
+        11,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      const room = await matchmakingService.createRoom(
+        user1Id,
+        user1Username,
+        user1Email,
+        'socket-1',
+        deck1Id,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck2)
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      await matchmakingService.joinRoom(
+        room.id,
+        user2Id,
+        user2Username,
+        user2Email,
+        'socket-2',
+        deck2Id,
+      )
+
+      // Les deux joueurs jouent une carte
+      matchmakingService.playCard(room.id, 'socket-1', 0)
+      matchmakingService.playCard(room.id, 'socket-2', 0)
+
+      // Attaquer plusieurs fois pour KO
+      let result = matchmakingService.attack(room.id, 'socket-1')
+      matchmakingService.endTurn(room.id, 'socket-2')
+      result = matchmakingService.attack(room.id, 'socket-1')
+
+      // Vérifier qu'un score a augmenté ou qu'une carte est KO
+      const scoreIncreased =
+        result.states[0].player.score > 0 || result.states[1].opponent.score > 0
+      const cardKOed =
+        result.states[0].opponent.activeCard === null ||
+        result.states[1].player.activeCard === null
+
+      expect(scoreIncreased || cardKOed).toBe(true)
+    })
+
+    it('should end game when score reaches 3', async () => {
+      // Créer et rejoindre une partie
+      const mockDeck1 = createMockDeck(
+        deck1Id,
+        user1Id,
+        user1Username,
+        user1Email,
+        10,
+        1,
+      )
+      const mockDeck2 = createMockDeck(
+        deck2Id,
+        user2Id,
+        user2Username,
+        user2Email,
+        10,
+        11,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      const room = await matchmakingService.createRoom(
+        user1Id,
+        user1Username,
+        user1Email,
+        'socket-1',
+        deck1Id,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck2)
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      await matchmakingService.joinRoom(
+        room.id,
+        user2Id,
+        user2Username,
+        user2Email,
+        'socket-2',
+        deck2Id,
+      )
+
+      // Simuler 3 victoires pour le host via accès direct au gameData
+      const gameData = matchmakingService['games'].get(room.id)
+      if (gameData) {
+        gameData.hostScore = 2 // Mettre à 2 pour que le prochain KO gagne
+        gameData.hostActiveCard = {
+          id: 1,
+          name: 'Card 1',
+          hp: 100,
+          attack: 200, // Attaque élevée pour KO en 1 coup
+          type: 'Fire',
+          pokedexNumber: 1,
+          imgUrl: null,
+          currentHp: 100,
+        }
+        gameData.guestActiveCard = {
+          id: 11,
+          name: 'Card 11',
+          hp: 10, // HP faible pour être KO facilement
+          attack: 50,
+          type: 'Water',
+          pokedexNumber: 11,
+          imgUrl: null,
+          currentHp: 10,
+        }
+        gameData.currentPlayerSocketId = 'socket-1'
+      }
+
+      const result = matchmakingService.attack(room.id, 'socket-1')
+
+      expect(result.gameEnded).toBe(true)
+      expect(result.winner).toBeDefined()
+      expect(result.winner?.username).toBe(user1Username)
+    })
+
+    it('should throw error if not player turn', async () => {
+      // Créer et rejoindre une partie
+      const mockDeck1 = createMockDeck(
+        deck1Id,
+        user1Id,
+        user1Username,
+        user1Email,
+        10,
+        1,
+      )
+      const mockDeck2 = createMockDeck(
+        deck2Id,
+        user2Id,
+        user2Username,
+        user2Email,
+        10,
+        11,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      const room = await matchmakingService.createRoom(
+        user1Id,
+        user1Username,
+        user1Email,
+        'socket-1',
+        deck1Id,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck2)
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      await matchmakingService.joinRoom(
+        room.id,
+        user2Id,
+        user2Username,
+        user2Email,
+        'socket-2',
+        deck2Id,
+      )
+
+      // Les deux joueurs jouent une carte
+      matchmakingService.playCard(room.id, 'socket-1', 0)
+      matchmakingService.playCard(room.id, 'socket-2', 0)
+
+      // Le guest essaie d'attaquer alors que c'est le tour du host
+      expect(() => matchmakingService.attack(room.id, 'socket-2')).toThrow(
+        'tour',
+      )
+    })
+
+    it('should throw error if no active cards', async () => {
+      // Créer et rejoindre une partie
+      const mockDeck1 = createMockDeck(
+        deck1Id,
+        user1Id,
+        user1Username,
+        user1Email,
+        10,
+        1,
+      )
+      const mockDeck2 = createMockDeck(
+        deck2Id,
+        user2Id,
+        user2Username,
+        user2Email,
+        10,
+        11,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      const room = await matchmakingService.createRoom(
+        user1Id,
+        user1Username,
+        user1Email,
+        'socket-1',
+        deck1Id,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck2)
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      await matchmakingService.joinRoom(
+        room.id,
+        user2Id,
+        user2Username,
+        user2Email,
+        'socket-2',
+        deck2Id,
+      )
+
+      // Attaquer sans carte active
+      expect(() => matchmakingService.attack(room.id, 'socket-1')).toThrow(
+        'carte active',
+      )
+    })
+
+    it('should throw error if game does not exist', () => {
+      expect(() =>
+        matchmakingService.attack('invalid-room-id', 'socket-1'),
+      ).toThrow("n'existe pas")
+    })
+  })
+
+  describe('endTurn', () => {
+    it('should change turn to opponent', async () => {
+      // Créer et rejoindre une partie
+      const mockDeck1 = createMockDeck(
+        deck1Id,
+        user1Id,
+        user1Username,
+        user1Email,
+        10,
+        1,
+      )
+      const mockDeck2 = createMockDeck(
+        deck2Id,
+        user2Id,
+        user2Username,
+        user2Email,
+        10,
+        11,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      const room = await matchmakingService.createRoom(
+        user1Id,
+        user1Username,
+        user1Email,
+        'socket-1',
+        deck1Id,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck2)
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      const { hostGameState } = await matchmakingService.joinRoom(
+        room.id,
+        user2Id,
+        user2Username,
+        user2Email,
+        'socket-2',
+        deck2Id,
+      )
+
+      expect(hostGameState.isMyTurn).toBe(true)
+
+      const states = matchmakingService.endTurn(room.id, 'socket-1')
+
+      expect(states[0].isMyTurn).toBe(false)
+      expect(states[1].isMyTurn).toBe(true)
+    })
+
+    it('should throw error if not player turn', async () => {
+      // Créer et rejoindre une partie
+      const mockDeck1 = createMockDeck(
+        deck1Id,
+        user1Id,
+        user1Username,
+        user1Email,
+        10,
+        1,
+      )
+      const mockDeck2 = createMockDeck(
+        deck2Id,
+        user2Id,
+        user2Username,
+        user2Email,
+        10,
+        11,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      const room = await matchmakingService.createRoom(
+        user1Id,
+        user1Username,
+        user1Email,
+        'socket-1',
+        deck1Id,
+      )
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck2)
+      prismaMock.deck.findFirst.mockResolvedValueOnce(mockDeck1)
+      await matchmakingService.joinRoom(
+        room.id,
+        user2Id,
+        user2Username,
+        user2Email,
+        'socket-2',
+        deck2Id,
+      )
+
+      // Le guest essaie de terminer son tour alors que c'est le tour du host
+      expect(() => matchmakingService.endTurn(room.id, 'socket-2')).toThrow(
+        'tour',
+      )
+    })
+
+    it('should throw error if game does not exist', () => {
+      expect(() =>
+        matchmakingService.endTurn('invalid-room-id', 'socket-1'),
+      ).toThrow("n'existe pas")
     })
   })
 })

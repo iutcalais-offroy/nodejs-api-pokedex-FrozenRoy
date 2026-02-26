@@ -1,4 +1,5 @@
 let socket = null
+let currentGameState = null
 
 // Sign in and auto-connect
 async function signIn() {
@@ -73,6 +74,27 @@ function connectWithToken(token) {
 
   socket.on('connect_error', (error) => {
     log('Connection error: ' + error.message, 'error')
+  })
+
+  // Game events handlers
+  socket.on('gameStarted', (gameState) => {
+    log('⬅️ Game Started!', 'received')
+    currentGameState = gameState
+    updateGameDisplay(gameState)
+    fillRoomIdFields(gameState.roomId)
+  })
+
+  socket.on('gameStateUpdated', (gameState) => {
+    log('⬅️ Game State Updated', 'received')
+    currentGameState = gameState
+    updateGameDisplay(gameState)
+  })
+
+  socket.on('gameEnded', (data) => {
+    log('⬅️ Game Ended!', 'received')
+    currentGameState = data.finalState
+    updateGameDisplay(data.finalState)
+    showVictoryMessage(data.winner)
   })
 
   // Listen to all server events
@@ -243,4 +265,118 @@ function log(message, type = 'info') {
 
 function clearLogs() {
   document.getElementById('logs').innerHTML = ''
+}
+
+// Game Display Functions
+function updateGameDisplay(gameState) {
+  if (!gameState) return
+
+  // Show game state section
+  document.getElementById('gameStateSection').style.display = 'block'
+
+  // Update player info
+  document.getElementById('playerName').textContent = `Vous (${gameState.player.username})`
+  document.getElementById('playerScore').textContent = gameState.player.score
+  document.getElementById('playerHandSize').textContent = gameState.player.hand.length
+  document.getElementById('playerDeckSize').textContent = gameState.player.deckSize
+
+  // Update opponent info
+  document.getElementById('opponentName').textContent = gameState.opponent.username
+  document.getElementById('opponentScore').textContent = gameState.opponent.score
+  document.getElementById('opponentHandSize').textContent = gameState.opponent.handSize
+  document.getElementById('opponentDeckSize').textContent = gameState.opponent.deckSize
+
+  // Update active cards
+  updateActiveCard('playerActiveCard', gameState.player.activeCard)
+  updateActiveCard('opponentActiveCard', gameState.opponent.activeCard)
+
+  // Update hand display
+  updateHandDisplay(gameState.player.hand)
+
+  // Update turn indicator
+  updateTurnIndicator(gameState.isMyTurn, gameState.player.username)
+}
+
+function updateActiveCard(containerId, card) {
+  const container = document.getElementById(containerId)
+  if (!card) {
+    container.className = 'card-placeholder'
+    container.innerHTML = 'Aucune carte active'
+    return
+  }
+
+  container.className = 'pokemon-card'
+  const hpPercent = (card.currentHp / card.hp) * 100
+  
+  container.innerHTML = `
+    ${card.imgUrl ? `<img src="${card.imgUrl}" alt="${card.name}" onerror="this.style.display='none'">` : ''}
+    <div class="card-name">${card.name}</div>
+    <div class="card-type">${card.type}</div>
+    <div class="card-stats">
+      <span class="hp">❤️ HP: ${card.currentHp}/${card.hp}</span>
+      <span class="attack">⚔️ ATK: ${card.attack}</span>
+    </div>
+    <div class="hp-bar">
+      <div class="hp-bar-fill" style="width: ${hpPercent}%"></div>
+    </div>
+  `
+}
+
+function updateHandDisplay(hand) {
+  const container = document.getElementById('playerHand')
+  if (!hand || hand.length === 0) {
+    container.innerHTML = '<h4>Main vide</h4>'
+    return
+  }
+
+  let html = '<h4>Votre main:</h4><div class="hand-cards">'
+  hand.forEach((card, index) => {
+    html += `
+      <div class="hand-card" title="Cliquez pour jouer cette carte (index ${index})">
+        <div class="card-name">${card.name}</div>
+        <div class="card-type">${card.type}</div>
+        <div class="card-stats">
+          <span>❤️ ${card.hp}</span>
+          <span>⚔️ ${card.attack}</span>
+        </div>
+        <div style="font-size: 10px; color: #858585; margin-top: 4px;">Index: ${index}</div>
+      </div>
+    `
+  })
+  html += '</div>'
+  container.innerHTML = html
+}
+
+function updateTurnIndicator(isMyTurn, playerName) {
+  const indicator = document.getElementById('turnIndicator')
+  if (isMyTurn) {
+    indicator.className = 'turn-indicator your-turn'
+    indicator.textContent = `🎮 C'est votre tour, ${playerName}!`
+  } else {
+    indicator.className = 'turn-indicator opponent-turn'
+    indicator.textContent = '⏳ Tour de l\'adversaire...'
+  }
+}
+
+function showVictoryMessage(winner) {
+  const messageDiv = document.getElementById('victoryMessage')
+  const myUsername = currentGameState?.player?.username
+  
+  if (winner.username === myUsername) {
+    messageDiv.innerHTML = '🎉 VICTOIRE ! Vous avez gagné ! 🎉'
+    messageDiv.style.background = 'linear-gradient(135deg, #4ec9b0 0%, #569cd6 100%)'
+  } else {
+    messageDiv.innerHTML = `😢 Défaite ! ${winner.username} a gagné.`
+    messageDiv.style.background = 'linear-gradient(135deg, #f48771 0%, #ce9178 100%)'
+  }
+  
+  messageDiv.style.display = 'block'
+}
+
+function fillRoomIdFields(roomId) {
+  // Auto-fill all room ID fields
+  document.getElementById('drawCardsRoomId').value = roomId
+  document.getElementById('playCardRoomId').value = roomId
+  document.getElementById('attackRoomId').value = roomId
+  document.getElementById('endTurnRoomId').value = roomId
 }

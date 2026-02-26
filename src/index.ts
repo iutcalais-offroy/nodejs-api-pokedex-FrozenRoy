@@ -265,6 +265,158 @@ if (require.main === module) {
       },
     )
 
+    // Événement: drawCards - Piocher des cartes jusqu'à 5 maximum
+    authenticatedSocket.on('drawCards', async (params: { roomId: string }) => {
+      try {
+        const { roomId } = params
+
+        // Piocher les cartes
+        const [hostGameState, guestGameState] = matchmakingService.drawCards(
+          roomId,
+          authenticatedSocket.id,
+        )
+
+        // Récupérer la room pour avoir les sockets des joueurs
+        const room = matchmakingService.getRoom(roomId)
+        if (!room) {
+          authenticatedSocket.emit('error', {
+            message: "La room n'existe pas",
+          })
+          return
+        }
+
+        // Envoyer l'état mis à jour aux deux joueurs
+        io.to(room.host.socketId).emit('gameStateUpdated', hostGameState)
+        io.to(room.guest!.socketId).emit('gameStateUpdated', guestGameState)
+      } catch (error) {
+        console.error('Error drawing cards:', error)
+        authenticatedSocket.emit('error', {
+          message: error instanceof Error ? error.message : 'Erreur inconnue',
+        })
+      }
+    })
+
+    // Événement: playCard - Jouer une carte de sa main sur le terrain
+    authenticatedSocket.on(
+      'playCard',
+      async (params: { roomId: string; cardIndex: number }) => {
+        try {
+          const { roomId, cardIndex } = params
+
+          // Valider cardIndex
+          if (typeof cardIndex !== 'number') {
+            authenticatedSocket.emit('error', {
+              message: 'Index de carte invalide',
+            })
+            return
+          }
+
+          // Jouer la carte
+          const [hostGameState, guestGameState] = matchmakingService.playCard(
+            roomId,
+            authenticatedSocket.id,
+            cardIndex,
+          )
+
+          // Récupérer la room pour avoir les sockets des joueurs
+          const room = matchmakingService.getRoom(roomId)
+          if (!room) {
+            authenticatedSocket.emit('error', {
+              message: "La room n'existe pas",
+            })
+            return
+          }
+
+          // Envoyer l'état mis à jour aux deux joueurs
+          io.to(room.host.socketId).emit('gameStateUpdated', hostGameState)
+          io.to(room.guest!.socketId).emit('gameStateUpdated', guestGameState)
+        } catch (error) {
+          console.error('Error playing card:', error)
+          authenticatedSocket.emit('error', {
+            message: error instanceof Error ? error.message : 'Erreur inconnue',
+          })
+        }
+      },
+    )
+
+    // Événement: attack - Attaquer la carte adverse
+    authenticatedSocket.on('attack', async (params: { roomId: string }) => {
+      try {
+        const { roomId } = params
+
+        // Attaquer
+        const result = matchmakingService.attack(roomId, authenticatedSocket.id)
+
+        // Récupérer la room pour avoir les sockets des joueurs
+        const room = matchmakingService.getRoom(roomId)
+        if (!room) {
+          authenticatedSocket.emit('error', {
+            message: "La room n'existe pas",
+          })
+          return
+        }
+
+        const [hostGameState, guestGameState] = result.states
+
+        if (result.gameEnded && result.winner) {
+          // Fin de partie - Envoyer gameEnded aux deux joueurs
+          io.to(room.host.socketId).emit('gameEnded', {
+            winner: result.winner,
+            finalState: hostGameState,
+          })
+          io.to(room.guest!.socketId).emit('gameEnded', {
+            winner: result.winner,
+            finalState: guestGameState,
+          })
+
+          // Nettoyer la room après une petite pause
+          setTimeout(() => {
+            matchmakingService.deleteRoom(roomId)
+          }, 5000)
+        } else {
+          // Partie continue - Envoyer l'état mis à jour
+          io.to(room.host.socketId).emit('gameStateUpdated', hostGameState)
+          io.to(room.guest!.socketId).emit('gameStateUpdated', guestGameState)
+        }
+      } catch (error) {
+        console.error('Error attacking:', error)
+        authenticatedSocket.emit('error', {
+          message: error instanceof Error ? error.message : 'Erreur inconnue',
+        })
+      }
+    })
+
+    // Événement: endTurn - Terminer son tour
+    authenticatedSocket.on('endTurn', async (params: { roomId: string }) => {
+      try {
+        const { roomId } = params
+
+        // Terminer le tour
+        const [hostGameState, guestGameState] = matchmakingService.endTurn(
+          roomId,
+          authenticatedSocket.id,
+        )
+
+        // Récupérer la room pour avoir les sockets des joueurs
+        const room = matchmakingService.getRoom(roomId)
+        if (!room) {
+          authenticatedSocket.emit('error', {
+            message: "La room n'existe pas",
+          })
+          return
+        }
+
+        // Envoyer l'état mis à jour aux deux joueurs
+        io.to(room.host.socketId).emit('gameStateUpdated', hostGameState)
+        io.to(room.guest!.socketId).emit('gameStateUpdated', guestGameState)
+      } catch (error) {
+        console.error('Error ending turn:', error)
+        authenticatedSocket.emit('error', {
+          message: error instanceof Error ? error.message : 'Erreur inconnue',
+        })
+      }
+    })
+
     authenticatedSocket.on('disconnect', () => {
       console.log(
         `User disconnected: ${authenticatedSocket.email} - Socket ID: ${authenticatedSocket.id}`,
