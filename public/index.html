@@ -53,6 +53,51 @@
       <div class="status disconnected" id="status">Disconnected</div>
     </div>
 
+    <!-- Game State Display -->
+    <div class="section game-state-section" id="gameStateSection" style="display: none;">
+      <h2>État de la Partie</h2>
+      
+      <!-- Victory Message -->
+      <div class="victory-message" id="victoryMessage" style="display: none;"></div>
+      
+      <!-- Game Board -->
+      <div class="game-board">
+        <!-- Opponent Side -->
+        <div class="player-side opponent-side">
+          <h3 id="opponentName">Adversaire</h3>
+          <div class="player-stats">
+            <span class="stat">Score: <strong id="opponentScore">0</strong></span>
+            <span class="stat">Cartes en main: <strong id="opponentHandSize">0</strong></span>
+            <span class="stat">Deck: <strong id="opponentDeckSize">0</strong></span>
+          </div>
+          <div class="active-card-zone">
+            <div id="opponentActiveCard" class="card-placeholder">Aucune carte active</div>
+          </div>
+        </div>
+
+        <!-- Turn Indicator -->
+        <div class="turn-indicator" id="turnIndicator">
+          En attente...
+        </div>
+
+        <!-- Player Side -->
+        <div class="player-side player-side-main">
+          <h3 id="playerName">Vous</h3>
+          <div class="player-stats">
+            <span class="stat">Score: <strong id="playerScore">0</strong></span>
+            <span class="stat">Cartes en main: <strong id="playerHandSize">0</strong></span>
+            <span class="stat">Deck: <strong id="playerDeckSize">0</strong></span>
+          </div>
+          <div class="active-card-zone">
+            <div id="playerActiveCard" class="card-placeholder">Aucune carte active</div>
+          </div>
+          <div class="hand-zone" id="playerHand">
+            <!-- Les cartes en main seront affichées ici -->
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Main Layout: Events on left, Logs on right -->
     <div class="main-grid">
       <!-- Left Column: Events -->

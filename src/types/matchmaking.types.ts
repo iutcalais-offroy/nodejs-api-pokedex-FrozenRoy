@@ -34,6 +34,13 @@ export interface GameCard {
 }
 
 /**
+ * Représente une carte active sur le terrain avec ses HP actuels
+ */
+export interface ActiveCard extends GameCard {
+  currentHp: number // HP actuels de la carte (diminuent lors des attaques)
+}
+
+/**
  * Représente l'état d'un joueur dans une partie
  */
 export interface PlayerGameState {
@@ -41,15 +48,43 @@ export interface PlayerGameState {
   username: string
   hand: GameCard[]
   handSize?: number // Pour l'adversaire, on ne montre que la taille de la main
+  deckSize: number // Nombre de cartes restantes dans le deck
+  activeCard: ActiveCard | null // Carte active sur le terrain
+  score: number // Nombre de cartes adverses vaincues
 }
 
 /**
- * Représente l'état initial d'une partie
+ * Représente l'état complet d'une partie
  */
 export interface GameState {
   roomId: string
   player: PlayerGameState
   opponent: PlayerGameState
+  currentPlayerSocketId: string // Socket ID du joueur dont c'est le tour
+  isMyTurn?: boolean // Calculé côté serveur pour le joueur actuel
+}
+
+/**
+ * Représente les données de jeu internes côté serveur
+ */
+export interface GameData {
+  roomId: string
+  hostSocketId: string
+  guestSocketId: string
+  hostUserId: number
+  guestUserId: number
+  hostUsername: string
+  guestUsername: string
+  hostHand: GameCard[]
+  guestHand: GameCard[]
+  hostDeck: GameCard[] // Cartes restantes dans le deck
+  guestDeck: GameCard[] // Cartes restantes dans le deck
+  hostActiveCard: ActiveCard | null
+  guestActiveCard: ActiveCard | null
+  hostScore: number
+  guestScore: number
+  currentPlayerSocketId: string // Socket ID du joueur dont c'est le tour
+  status: 'playing' | 'finished'
 }
 
 /**

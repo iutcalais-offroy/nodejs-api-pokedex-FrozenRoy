@@ -5,8 +5,12 @@ import {
   RoomInfo,
   GameState,
   GameCard,
+  GameData,
+  ActiveCard,
 } from '../types/matchmaking.types'
 import { v4 as uuidv4 } from 'uuid'
+import { calculateDamage } from '../utils/rules.util'
+import { PokemonType } from '../generated/prisma/client'
 
 /**
  * Service de gestion du matchmaking et des rooms de jeu
@@ -14,6 +18,7 @@ import { v4 as uuidv4 } from 'uuid'
  */
 export class MatchmakingService {
   private rooms: Map<string, Room> = new Map()
+  private games: Map<string, GameData> = new Map() // État des parties en cours
 
   /**
    * Crée une nouvelle room d'attente
@@ -203,39 +208,304 @@ export class MatchmakingService {
 
     const hostHand = hostCards.slice(0, 5).map(this.mapCardToGameCard)
     const guestHand = guestCards.slice(0, 5).map(this.mapCardToGameCard)
+    const hostDeckRemaining = hostCards.slice(5).map(this.mapCardToGameCard)
+    const guestDeckRemaining = guestCards.slice(5).map(this.mapCardToGameCard)
 
-    // Créer les états de jeu
-    const hostGameState: GameState = {
+    // Créer l'état de la partie
+    const gameData: GameData = {
       roomId: room.id,
-      player: {
-        userId: room.host.userId,
-        username: room.host.username,
-        hand: hostHand,
-      },
-      opponent: {
-        userId: guest.userId,
-        username: guest.username,
-        hand: [], // L'opponent ne voit pas les cartes
-        handSize: guestHand.length,
-      },
+      hostSocketId: room.host.socketId,
+      guestSocketId: guest.socketId,
+      hostUserId: room.host.userId,
+      guestUserId: guest.userId,
+      hostUsername: room.host.username,
+      guestUsername: guest.username,
+      hostHand,
+      guestHand,
+      hostDeck: hostDeckRemaining,
+      guestDeck: guestDeckRemaining,
+      hostActiveCard: null,
+      guestActiveCard: null,
+      hostScore: 0,
+      guestScore: 0,
+      currentPlayerSocketId: room.host.socketId, // Le créateur commence
+      status: 'playing',
     }
 
-    const guestGameState: GameState = {
-      roomId: room.id,
-      player: {
-        userId: guest.userId,
-        username: guest.username,
-        hand: guestHand,
-      },
-      opponent: {
-        userId: room.host.userId,
-        username: room.host.username,
-        hand: [], // L'opponent ne voit pas les cartes
-        handSize: hostHand.length,
-      },
-    }
+    // Stocker l'état de la partie
+    this.games.set(room.id, gameData)
+
+    // Mettre à jour le statut de la room
+    room.status = 'playing'
+
+    // Créer les états de jeu pour chaque joueur
+    const hostGameState = this.createGameStateForPlayer(
+      gameData,
+      room.host.socketId,
+    )
+    const guestGameState = this.createGameStateForPlayer(
+      gameData,
+      guest.socketId,
+    )
 
     return { hostGameState, guestGameState }
+  }
+
+  /**
+   * Crée un état de jeu personnalisé pour un joueur spécifique
+   * Cache les informations sensibles de l'adversaire (main, deck)
+   */
+  private createGameStateForPlayer(
+    gameData: GameData,
+    socketId: string,
+  ): GameState {
+    const isHost = socketId === gameData.hostSocketId
+
+    const playerState = {
+      userId: isHost ? gameData.hostUserId : gameData.guestUserId,
+      username: isHost ? gameData.hostUsername : gameData.guestUsername,
+      hand: isHost ? gameData.hostHand : gameData.guestHand,
+      deckSize: isHost ? gameData.hostDeck.length : gameData.guestDeck.length,
+      activeCard: isHost ? gameData.hostActiveCard : gameData.guestActiveCard,
+      score: isHost ? gameData.hostScore : gameData.guestScore,
+    }
+
+    const opponentState = {
+      userId: isHost ? gameData.guestUserId : gameData.hostUserId,
+      username: isHost ? gameData.guestUsername : gameData.hostUsername,
+      hand: [], // On ne montre jamais la main de l'adversaire
+      handSize: isHost ? gameData.guestHand.length : gameData.hostHand.length,
+      deckSize: isHost ? gameData.guestDeck.length : gameData.hostDeck.length,
+      activeCard: isHost ? gameData.guestActiveCard : gameData.hostActiveCard,
+      score: isHost ? gameData.guestScore : gameData.hostScore,
+    }
+
+    return {
+      roomId: gameData.roomId,
+      player: playerState,
+      opponent: opponentState,
+      currentPlayerSocketId: gameData.currentPlayerSocketId,
+      isMyTurn: socketId === gameData.currentPlayerSocketId,
+    }
+  }
+
+  /**
+   * Piocher des cartes jusqu'à avoir 5 cartes en main
+   * Les joueurs peuvent piocher à tout moment (pas de vérification de tour)
+   * @param roomId - ID de la room
+   * @param socketId - ID du socket du joueur
+   * @returns Les états de jeu mis à jour pour les deux joueurs
+   */
+  drawCards(roomId: string, socketId: string): GameState[] {
+    const gameData = this.games.get(roomId)
+    if (!gameData) {
+      throw new Error("La partie n'existe pas")
+    }
+
+    const isHost = socketId === gameData.hostSocketId
+
+    // Piocher jusqu'à 5 cartes maximum
+    if (isHost) {
+      const cardsToDraw = Math.min(
+        5 - gameData.hostHand.length,
+        gameData.hostDeck.length,
+      )
+      const drawnCards = gameData.hostDeck.splice(0, cardsToDraw)
+      gameData.hostHand.push(...drawnCards)
+    } else {
+      const cardsToDraw = Math.min(
+        5 - gameData.guestHand.length,
+        gameData.guestDeck.length,
+      )
+      const drawnCards = gameData.guestDeck.splice(0, cardsToDraw)
+      gameData.guestHand.push(...drawnCards)
+    }
+
+    // Créer les états de jeu pour les deux joueurs
+    return [
+      this.createGameStateForPlayer(gameData, gameData.hostSocketId),
+      this.createGameStateForPlayer(gameData, gameData.guestSocketId),
+    ]
+  }
+
+  /**
+   * Jouer une carte de sa main sur le terrain
+   * Les joueurs peuvent jouer des cartes à tout moment (pas de vérification de tour)
+   * @param roomId - ID de la room
+   * @param socketId - ID du socket du joueur
+   * @param cardIndex - Index de la carte dans la main
+   * @returns Les états de jeu mis à jour pour les deux joueurs
+   * @throws {Error} Si l'index est invalide
+   */
+  playCard(roomId: string, socketId: string, cardIndex: number): GameState[] {
+    const gameData = this.games.get(roomId)
+    if (!gameData) {
+      throw new Error("La partie n'existe pas")
+    }
+
+    const isHost = socketId === gameData.hostSocketId
+    const hand = isHost ? gameData.hostHand : gameData.guestHand
+
+    // Vérifier l'index
+    if (cardIndex < 0 || cardIndex >= hand.length) {
+      throw new Error('Index de carte invalide')
+    }
+
+    // Retirer la carte de la main et la mettre sur le terrain
+    const card = hand.splice(cardIndex, 1)[0]
+    const activeCard: ActiveCard = {
+      ...card,
+      currentHp: card.hp,
+    }
+
+    if (isHost) {
+      gameData.hostActiveCard = activeCard
+    } else {
+      gameData.guestActiveCard = activeCard
+    }
+
+    // Créer les états de jeu pour les deux joueurs
+    return [
+      this.createGameStateForPlayer(gameData, gameData.hostSocketId),
+      this.createGameStateForPlayer(gameData, gameData.guestSocketId),
+    ]
+  }
+
+  /**
+   * Attaquer la carte adverse avec sa carte active
+   * @param roomId - ID de la room
+   * @param socketId - ID du socket du joueur
+   * @returns Les états de jeu mis à jour ou le résultat de fin de partie
+   * @throws {Error} Si les conditions d'attaque ne sont pas remplies
+   */
+  attack(
+    roomId: string,
+    socketId: string,
+  ): {
+    states: GameState[]
+    gameEnded: boolean
+    winner?: { socketId: string; username: string }
+  } {
+    const gameData = this.games.get(roomId)
+    if (!gameData) {
+      throw new Error("La partie n'existe pas")
+    }
+
+    // Vérifier que c'est le tour du joueur
+    if (gameData.currentPlayerSocketId !== socketId) {
+      throw new Error("Ce n'est pas votre tour")
+    }
+
+    const isHost = socketId === gameData.hostSocketId
+
+    // Vérifier que les deux joueurs ont une carte active
+    if (!gameData.hostActiveCard || !gameData.guestActiveCard) {
+      throw new Error('Les deux joueurs doivent avoir une carte active')
+    }
+
+    // Récupérer les cartes
+    const attackerCard = isHost
+      ? gameData.hostActiveCard
+      : gameData.guestActiveCard
+    const defenderCard = isHost
+      ? gameData.guestActiveCard
+      : gameData.hostActiveCard
+
+    // Calculer les dégâts
+    const damage = calculateDamage(
+      attackerCard.attack,
+      attackerCard.type as PokemonType,
+      defenderCard.type as PokemonType,
+    )
+
+    // Appliquer les dégâts
+    defenderCard.currentHp -= damage
+
+    // Vérifier si la carte adverse est KO
+    if (defenderCard.currentHp <= 0) {
+      // Augmenter le score de l'attaquant
+      if (isHost) {
+        gameData.hostScore++
+      } else {
+        gameData.guestScore++
+      }
+
+      // Retirer la carte KO du terrain
+      if (isHost) {
+        gameData.guestActiveCard = null
+      } else {
+        gameData.hostActiveCard = null
+      }
+    }
+
+    // Changer de tour après l'attaque
+    gameData.currentPlayerSocketId = isHost
+      ? gameData.guestSocketId
+      : gameData.hostSocketId
+
+    // Vérifier la victoire (premier à 3 points)
+    const gameEnded = gameData.hostScore >= 3 || gameData.guestScore >= 3
+
+    if (gameEnded) {
+      gameData.status = 'finished'
+      const winnerIsHost = gameData.hostScore >= 3
+      return {
+        states: [
+          this.createGameStateForPlayer(gameData, gameData.hostSocketId),
+          this.createGameStateForPlayer(gameData, gameData.guestSocketId),
+        ],
+        gameEnded: true,
+        winner: {
+          socketId: winnerIsHost
+            ? gameData.hostSocketId
+            : gameData.guestSocketId,
+          username: winnerIsHost
+            ? gameData.hostUsername
+            : gameData.guestUsername,
+        },
+      }
+    }
+
+    // Créer les états de jeu pour les deux joueurs
+    return {
+      states: [
+        this.createGameStateForPlayer(gameData, gameData.hostSocketId),
+        this.createGameStateForPlayer(gameData, gameData.guestSocketId),
+      ],
+      gameEnded: false,
+    }
+  }
+
+  /**
+   * Terminer son tour et passer au joueur suivant
+   * @param roomId - ID de la room
+   * @param socketId - ID du socket du joueur
+   * @returns Les états de jeu mis à jour pour les deux joueurs
+   * @throws {Error} Si ce n'est pas le tour du joueur
+   */
+  endTurn(roomId: string, socketId: string): GameState[] {
+    const gameData = this.games.get(roomId)
+    if (!gameData) {
+      throw new Error("La partie n'existe pas")
+    }
+
+    // Vérifier que c'est le tour du joueur
+    if (gameData.currentPlayerSocketId !== socketId) {
+      throw new Error("Ce n'est pas votre tour")
+    }
+
+    const isHost = socketId === gameData.hostSocketId
+
+    // Changer de tour
+    gameData.currentPlayerSocketId = isHost
+      ? gameData.guestSocketId
+      : gameData.hostSocketId
+
+    // Créer les états de jeu pour les deux joueurs
+    return [
+      this.createGameStateForPlayer(gameData, gameData.hostSocketId),
+      this.createGameStateForPlayer(gameData, gameData.guestSocketId),
+    ]
   }
 
   /**
@@ -279,6 +549,7 @@ export class MatchmakingService {
         room.guest?.socketId === socketId
       ) {
         this.rooms.delete(roomId)
+        this.games.delete(roomId) // Supprimer aussi la partie en cours
       }
     })
   }
